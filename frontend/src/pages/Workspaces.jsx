@@ -65,8 +65,8 @@ export default function Workspaces() {
       {/* Header Segment */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#e0e0ec', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-            <Building2 color="#2d5fdf" size={24} />
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#ece0dc', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+            <Building2 color="#f97316" size={24} />
             Global Workspaces
           </h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#8b8ba0' }}>

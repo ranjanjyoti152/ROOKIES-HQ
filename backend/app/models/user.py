@@ -35,3 +35,5 @@ class User(Base):
     time_entries = relationship("TimeEntry", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
     leaderboard_entries = relationship("LeaderboardEntry", back_populates="user")
+    project_memberships = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
+    assigned_projects = relationship("Project", secondary="project_members", viewonly=True, primaryjoin="User.id == ProjectMember.user_id", secondaryjoin="and_(ProjectMember.project_id == Project.id, ProjectMember.status != 'rejected')")

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { Briefcase, Building, CheckCircle2, Clock } from 'lucide-react';
 
-const card = { background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px', padding: '24px' };
-const label = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#5a5a70', textTransform: 'uppercase' };
+const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px', padding: '24px' };
+const label = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase' };
 
 const badgeColors = {
   active: { bg: 'rgba(34,197,94,0.12)', color: '#22c55e' },
@@ -48,19 +48,19 @@ export default function WorkDashboard() {
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#e0e0ec' }}>Work Dashboard</h1>
-        <p style={{ fontSize: '13px', color: '#4a4a60', marginTop: '4px' }}>A high-level view of active client work and projects</p>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Work Dashboard</h1>
+        <p style={{ fontSize: '13px', color: 'rgba(88,66,55,0.6)', marginTop: '4px' }}>A high-level view of active client work and projects</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div style={{ ...card, padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(45,95,223,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Briefcase size={16} style={{ color: '#2d5fdf' }} />
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Briefcase size={16} style={{ color: '#f97316' }} />
             </div>
             <span style={label}>Total Projects</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#e0e0ec' }}>{projects.length}</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ece0dc' }}>{projects.length}</div>
         </div>
 
         <div style={{ ...card, padding: '20px' }}>
@@ -70,7 +70,7 @@ export default function WorkDashboard() {
             </div>
             <span style={label}>Unique Clients</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#e0e0ec' }}>{uniqueClients}</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ece0dc' }}>{uniqueClients}</div>
         </div>
 
         <div style={{ ...card, padding: '20px' }}>
@@ -80,7 +80,7 @@ export default function WorkDashboard() {
             </div>
             <span style={label}>Active Projects</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#e0e0ec' }}>{activeProjects.length}</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ece0dc' }}>{activeProjects.length}</div>
         </div>
       </div>
 
@@ -91,14 +91,14 @@ export default function WorkDashboard() {
           
           return (
             <div key={project.id} style={{ ...card, padding: '20px', transition: 'border-color 150ms' }}
-                 onMouseEnter={e => e.currentTarget.style.borderColor = '#2a2a3a'}
-                 onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a28'}>
+                 onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(88,66,55,0.5)'}
+                 onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(88,66,55,0.2)'}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#5a5a70', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
                     {project.client_name}
                   </div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#d0d0e0' }}>{project.name}</h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#ece0dc' }}>{project.name}</h3>
                 </div>
                 <span style={{ padding: '3px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: b.bg, color: b.color }}>
                   {project.status}
@@ -109,15 +109,15 @@ export default function WorkDashboard() {
                 <>
                   <div style={{ marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'bottom', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '12px', color: '#4a4a60' }}>Progress</span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#e0e0ec' }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(88,66,55,0.6)' }}>Progress</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#ece0dc' }}>
                         {stats.completion_percentage}%
                       </span>
                     </div>
-                    <div style={{ width: '100%', height: '6px', background: '#151520', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '6px', background: 'rgba(88,66,55,0.15)', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ 
                         height: '100%', 
-                        background: stats.completion_percentage === 100 ? '#22c55e' : '#2d5fdf',
+                        background: stats.completion_percentage === 100 ? '#22c55e' : '#f97316',
                         width: `${stats.completion_percentage}%`,
                         borderRadius: '3px',
                         transition: 'width 1s ease-out'
@@ -125,29 +125,29 @@ export default function WorkDashboard() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid #151520', paddingTop: '16px' }}>
+                  <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid rgba(88,66,55,0.15)', paddingTop: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '10px', color: '#5a5a70', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '2px' }}>Total Tasks</div>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#c0c0d0' }}>{stats.total_tasks}</div>
+                      <div style={{ fontSize: '10px', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '2px' }}>Total Tasks</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#e0c0b1' }}>{stats.total_tasks}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '10px', color: '#5a5a70', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '2px' }}>Completed</div>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#c0c0d0' }}>{stats.completed_count}</div>
+                      <div style={{ fontSize: '10px', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '2px' }}>Completed</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#e0c0b1' }}>{stats.completed_count}</div>
                     </div>
                   </div>
                 </>
               ) : (
                 <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#4a4a60' }}>Loading stats...</span>
+                  <span style={{ fontSize: '12px', color: 'rgba(88,66,55,0.6)' }}>Loading stats...</span>
                 </div>
               )}
             </div>
           );
         })}
         {projects.length === 0 && !loading && (
-          <div style={{ gridColumn: '1 / -1', padding: '60px 20px', textAlign: 'center', background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px' }}>
-            <Briefcase size={32} style={{ color: '#2a2a3a', margin: '0 auto 12px' }} />
-            <div style={{ fontSize: '14px', color: '#c0c0d0' }}>No projects created yet.</div>
+          <div style={{ gridColumn: '1 / -1', padding: '60px 20px', textAlign: 'center', background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px' }}>
+            <Briefcase size={32} style={{ color: 'rgba(88,66,55,0.5)', margin: '0 auto 12px' }} />
+            <div style={{ fontSize: '14px', color: '#e0c0b1' }}>No projects created yet.</div>
           </div>
         )}
       </div>

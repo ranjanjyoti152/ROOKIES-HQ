@@ -12,6 +12,7 @@ from app.models.automation_rule import AutomationRule
 from app.models.leaderboard import LeaderboardEntry
 from app.models.note import Note
 from app.models.canvas_board import CanvasBoard
+from app.models.project_members import ProjectMember
 
 __all__ = [
     "Organization",
@@ -30,4 +31,5 @@ __all__ = [
     "LeaderboardEntry",
     "Note",
     "CanvasBoard",
+    "ProjectMember",
 ]

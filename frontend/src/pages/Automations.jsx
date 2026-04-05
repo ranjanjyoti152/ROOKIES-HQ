@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { Zap, Plus, ToggleLeft, ToggleRight, Trash2, X } from 'lucide-react';
 
-const card = { background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px' };
-const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#5a5a70', textTransform: 'uppercase', marginBottom: '8px' };
-const inputStyle = { width: '100%', padding: '12px 16px', background: '#131320', border: '1px solid #1c1c2c', borderRadius: '8px', fontSize: '14px', color: '#c0c0d0', outline: 'none', boxSizing: 'border-box' };
+const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px' };
+const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', marginBottom: '8px' };
+const inputStyle = { width: '100%', padding: '12px 16px', background: '#2f2926', border: '1px solid rgba(88,66,55,0.3)', borderRadius: '8px', fontSize: '14px', color: '#e0c0b1', outline: 'none', boxSizing: 'border-box' };
 
 export default function Automations() {
   const [rules, setRules] = useState([]);
@@ -23,12 +23,12 @@ export default function Automations() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#e0e0ec' }}>Automations</h1>
-          <p style={{ fontSize: '13px', color: '#4a4a60', marginTop: '4px' }}>Configure triggers and actions for your workflow</p>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Automations</h1>
+          <p style={{ fontSize: '13px', color: 'rgba(88,66,55,0.6)', marginTop: '4px' }}>Configure triggers and actions for your workflow</p>
         </div>
         <button onClick={() => setShowCreate(true)} style={{
           display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '8px',
-          background: '#2d5fdf', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          background: '#f97316', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
         }}>
           <Plus size={15} /> New Rule
         </button>
@@ -37,33 +37,33 @@ export default function Automations() {
       {/* Rules List */}
       {rules.length === 0 ? (
         <div style={{ ...card, padding: '60px 20px', textAlign: 'center' }}>
-          <Zap size={40} style={{ color: '#2a2a3a', margin: '0 auto 14px' }} />
-          <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#c0c0d0', marginBottom: '6px' }}>No automation rules yet</h3>
-          <p style={{ fontSize: '12px', color: '#3a3a50' }}>Create your first rule to automate repetitive tasks</p>
+          <Zap size={40} style={{ color: 'rgba(88,66,55,0.5)', margin: '0 auto 14px' }} />
+          <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#e0c0b1', marginBottom: '6px' }}>No automation rules yet</h3>
+          <p style={{ fontSize: '12px', color: 'rgba(88,66,55,0.5)' }}>Create your first rule to automate repetitive tasks</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {rules.map(r => (
             <div key={r.id} style={{ ...card, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border 150ms' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#2a2a3a'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a28'}>
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(88,66,55,0.5)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(88,66,55,0.2)'}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '8px',
-                  background: r.is_active ? 'rgba(234,179,8,0.1)' : '#101018',
-                  border: `1px solid ${r.is_active ? 'rgba(234,179,8,0.2)' : '#151520'}`,
+                  background: r.is_active ? 'rgba(234,179,8,0.1)' : '#241e1c',
+                  border: `1px solid ${r.is_active ? 'rgba(234,179,8,0.2)' : 'rgba(88,66,55,0.15)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Zap size={16} style={{ color: r.is_active ? '#eab308' : '#3a3a50' }} />
+                  <Zap size={16} style={{ color: r.is_active ? '#eab308' : 'rgba(88,66,55,0.5)' }} />
                 </div>
                 <div>
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#d0d0e0' }}>{r.name}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#ece0dc' }}>{r.name}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                     <span style={{
                       padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700,
-                      background: 'rgba(45,95,223,0.12)', color: '#5090ff', textTransform: 'uppercase',
+                      background: 'rgba(249,115,22,0.12)', color: '#ffb690', textTransform: 'uppercase',
                     }}>{r.trigger_type.replace(/_/g, ' ')}</span>
-                    <span style={{ fontSize: '11px', color: '#3a3a50' }}>→</span>
+                    <span style={{ fontSize: '11px', color: 'rgba(88,66,55,0.5)' }}>→</span>
                     <span style={{
                       padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700,
                       background: 'rgba(34,197,94,0.12)', color: '#22c55e', textTransform: 'uppercase',
@@ -76,19 +76,19 @@ export default function Automations() {
                   padding: '6px 8px', borderRadius: '6px', background: 'none', border: 'none', cursor: 'pointer',
                   transition: 'background 150ms',
                 }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#101018'}
+                  onMouseEnter={e => e.currentTarget.style.background = '#241e1c'}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                   {r.is_active
                     ? <ToggleRight size={22} style={{ color: '#22c55e' }} />
-                    : <ToggleLeft size={22} style={{ color: '#3a3a50' }} />
+                    : <ToggleLeft size={22} style={{ color: 'rgba(88,66,55,0.5)' }} />
                   }
                 </button>
                 <button onClick={() => del(r.id)} style={{
                   padding: '6px 8px', borderRadius: '6px', background: 'none', border: 'none',
-                  color: '#3a3a50', cursor: 'pointer', transition: 'all 150ms',
+                  color: 'rgba(88,66,55,0.5)', cursor: 'pointer', transition: 'all 150ms',
                 }}
                   onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#3a3a50'; e.currentTarget.style.background = 'none'; }}>
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(88,66,55,0.5)'; e.currentTarget.style.background = 'none'; }}>
                   <Trash2 size={15} />
                 </button>
               </div>
@@ -104,14 +104,14 @@ export default function Automations() {
           <div style={{ ...card, padding: '32px', width: '100%', maxWidth: '420px', animation: 'scaleIn 0.15s ease-out' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#e0e0ec' }}>New Automation Rule</h2>
-              <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: '#4a4a60', cursor: 'pointer' }}><X size={18} /></button>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ece0dc' }}>New Automation Rule</h2>
+              <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: 'rgba(88,66,55,0.6)', cursor: 'pointer' }}><X size={18} /></button>
             </div>
             <form onSubmit={handleCreate}>
               <div style={{ marginBottom: '20px' }}>
                 <label style={label}>Rule Name</label>
                 <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Notify on Review"
-                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#2d5fdf'} onBlur={e => e.target.style.borderColor = '#1c1c2c'} />
+                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'rgba(88,66,55,0.3)'} />
               </div>
               <div style={{ marginBottom: '20px' }}>
                 <label style={label}>Trigger</label>
@@ -135,10 +135,10 @@ export default function Automations() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button type="button" onClick={() => setShowCreate(false)} style={{
                   flex: 1, padding: '12px', borderRadius: '8px', background: 'transparent',
-                  border: '1px solid #1c1c2c', fontSize: '14px', fontWeight: 600, color: '#6a6a80', cursor: 'pointer',
+                  border: '1px solid rgba(88,66,55,0.3)', fontSize: '14px', fontWeight: 600, color: 'rgba(167,139,125,0.6)', cursor: 'pointer',
                 }}>Cancel</button>
                 <button type="submit" style={{
-                  flex: 1, padding: '12px', borderRadius: '8px', background: '#2d5fdf',
+                  flex: 1, padding: '12px', borderRadius: '8px', background: '#f97316',
                   border: 'none', fontSize: '14px', fontWeight: 600, color: 'white', cursor: 'pointer',
                 }}>Create</button>
               </div>

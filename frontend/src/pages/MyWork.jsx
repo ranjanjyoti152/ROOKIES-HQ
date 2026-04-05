@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { ClipboardList, Eye } from 'lucide-react';
 
-const card = { background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px', overflow: 'hidden' };
-const th = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', color: '#3a3a50', textTransform: 'uppercase', padding: '10px 16px', textAlign: 'left', borderBottom: '1px solid #151520' };
+const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px', overflow: 'hidden' };
+const th = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(88,66,55,0.5)', textTransform: 'uppercase', padding: '10px 16px', textAlign: 'left', borderBottom: '1px solid rgba(88,66,55,0.15)' };
 const td = { padding: '12px 16px', borderBottom: '1px solid #111118', fontSize: '13px' };
 
 const badgeColors = {
-  unassigned: { bg: '#1a1a28', color: '#6a6a80' },
-  claimed: { bg: 'rgba(45,95,223,0.12)', color: '#5090ff' },
+  unassigned: { bg: 'rgba(88,66,55,0.2)', color: 'rgba(167,139,125,0.6)' },
+  claimed: { bg: 'rgba(249,115,22,0.12)', color: '#ffb690' },
   editing: { bg: 'rgba(234,179,8,0.12)', color: '#eab308' },
   internal_review: { bg: 'rgba(168,85,247,0.12)', color: '#a855f7' },
   revision: { bg: 'rgba(249,115,22,0.12)', color: '#f97316' },
@@ -16,7 +16,7 @@ const badgeColors = {
   closed: { bg: 'rgba(20,184,166,0.12)', color: '#14b8a6' },
 };
 
-const priorityDot = { urgent: '#ef4444', high: '#f97316', medium: '#2d5fdf', low: '#4a4a60' };
+const priorityDot = { urgent: '#ef4444', high: '#f97316', medium: '#f97316', low: 'rgba(88,66,55,0.6)' };
 
 export default function MyWork() {
   const [tasks, setTasks] = useState([]);
@@ -25,16 +25,16 @@ export default function MyWork() {
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#e0e0ec' }}>My Work</h1>
-        <p style={{ fontSize: '13px', color: '#4a4a60', marginTop: '4px' }}>All tasks currently assigned to you</p>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>My Work</h1>
+        <p style={{ fontSize: '13px', color: 'rgba(88,66,55,0.6)', marginTop: '4px' }}>All tasks currently assigned to you</p>
       </div>
 
       <div style={card}>
         {tasks.length === 0 ? (
           <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-            <ClipboardList size={40} style={{ color: '#2a2a3a', margin: '0 auto 14px' }} />
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#c0c0d0', marginBottom: '6px' }}>No tasks assigned</h3>
-            <p style={{ fontSize: '12px', color: '#3a3a50' }}>Head to the Arena to claim some tasks!</p>
+            <ClipboardList size={40} style={{ color: 'rgba(88,66,55,0.5)', margin: '0 auto 14px' }} />
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#e0c0b1', marginBottom: '6px' }}>No tasks assigned</h3>
+            <p style={{ fontSize: '12px', color: 'rgba(88,66,55,0.5)' }}>Head to the Arena to claim some tasks!</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -54,8 +54,8 @@ export default function MyWork() {
                     onMouseEnter={e => e.currentTarget.style.background = '#0f0f18'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <td style={td}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#d0d0e0' }}>{t.title}</div>
-                      <div style={{ fontSize: '11px', color: '#4a4a60', marginTop: '2px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#ece0dc' }}>{t.title}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(88,66,55,0.6)', marginTop: '2px' }}>
                         Asset #{Math.floor(Math.random() * 9000 + 1000)}
                       </div>
                     </td>
@@ -72,18 +72,18 @@ export default function MyWork() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{
                           width: '6px', height: '6px', borderRadius: '50%',
-                          background: priorityDot[t.priority] || '#4a4a60', display: 'inline-block',
+                          background: priorityDot[t.priority] || 'rgba(88,66,55,0.6)', display: 'inline-block',
                         }} />
-                        <span style={{ fontSize: '11px', color: '#6a6a80', textTransform: 'capitalize' }}>{t.priority}</span>
+                        <span style={{ fontSize: '11px', color: 'rgba(167,139,125,0.6)', textTransform: 'capitalize' }}>{t.priority}</span>
                       </div>
                     </td>
                     <td style={{ ...td, textAlign: 'right' }}>
                       <button style={{
                         padding: '6px', borderRadius: '6px', background: 'none', border: 'none',
-                        color: '#4a4a60', cursor: 'pointer', transition: 'color 150ms'
+                        color: 'rgba(88,66,55,0.6)', cursor: 'pointer', transition: 'color 150ms'
                       }}
-                        onMouseEnter={e => e.currentTarget.style.color = '#5090ff'}
-                        onMouseLeave={e => e.currentTarget.style.color = '#4a4a60'}>
+                        onMouseEnter={e => e.currentTarget.style.color = '#ffb690'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(88,66,55,0.6)'}>
                         <Eye size={15} />
                       </button>
                     </td>

@@ -23,3 +23,5 @@ class Project(Base):
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
     notes = relationship("Note", back_populates="project", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary="project_tags", back_populates="projects")
+    memberships = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
+    assigned_members = relationship("User", secondary="project_members", viewonly=True, primaryjoin="Project.id == ProjectMember.project_id", secondaryjoin="and_(ProjectMember.user_id == User.id, ProjectMember.status != 'rejected')")

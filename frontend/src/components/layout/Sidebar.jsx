@@ -4,7 +4,7 @@ import useUIStore from '../../store/uiStore';
 import {
   LayoutDashboard, Swords, Kanban, FolderOpen, Target, Zap, Users, Trophy,
   ClipboardList, Clock, Briefcase, Palette, StickyNote, Bell, ChevronLeft,
-  ChevronRight, LogOut, Bolt,
+  ChevronRight, LogOut, Flame, Crown, Sparkles,
 } from 'lucide-react';
 
 const iconMap = {
@@ -13,13 +13,13 @@ const iconMap = {
 };
 
 function groupItems(items) {
-  const sections = { MAIN: [], PERFORMANCE: [], TOOLS: [] };
+  const sections = { GENERAL: [], PERFORMANCE: [], TOOLS: [] };
   const perf = ['leaderboard', 'my_work', 'time_report'];
   const tools = ['canvas', 'notes', 'work_dashboard'];
   for (const item of items) {
     if (perf.includes(item.key)) sections.PERFORMANCE.push(item);
     else if (tools.includes(item.key)) sections.TOOLS.push(item);
-    else sections.MAIN.push(item);
+    else sections.GENERAL.push(item);
   }
   return sections;
 }
@@ -29,30 +29,63 @@ export default function Sidebar() {
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const location = useLocation();
   const sections = groupItems(sidebarItems);
-  const w = sidebarCollapsed ? 56 : 200;
+  const w = sidebarCollapsed ? 58 : 210;
 
-  const labelStyle = {
-    fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', color: '#3a3a50',
-    textTransform: 'uppercase', padding: '18px 16px 6px 16px',
-  };
+  const SectionLabel = ({ children }) =>
+    !sidebarCollapsed ? (
+      <div style={{
+        fontSize: '9px', fontWeight: 700, letterSpacing: '0.14em',
+        color: 'rgba(88,66,55,0.6)', textTransform: 'uppercase',
+        padding: '20px 18px 6px 18px',
+      }}>
+        {children}
+      </div>
+    ) : <div style={{ borderTop: '1px solid rgba(88,66,55,0.2)', margin: '10px 14px' }} />;
 
   const NavItem = ({ item }) => {
     const Icon = iconMap[item.icon] || LayoutDashboard;
     const active = location.pathname === item.path;
     return (
-      <NavLink to={item.path} style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: sidebarCollapsed ? '8px 0' : '8px 16px',
-        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-        fontSize: '13px', fontWeight: 500, textDecoration: 'none',
-        color: active ? '#5090ff' : '#6a6a80',
-        background: active ? 'rgba(45,95,223,0.08)' : 'transparent',
-        borderLeft: active ? '3px solid #2d5fdf' : '3px solid transparent',
-        transition: 'all 120ms',
-        position: 'relative',
-      }}>
-        <Icon size={16} style={{ flexShrink: 0 }} />
-        {!sidebarCollapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>}
+      <NavLink
+        to={item.path}
+        style={{
+          display: 'flex', alignItems: 'center',
+          gap: sidebarCollapsed ? 0 : '10px',
+          padding: sidebarCollapsed ? '9px 0' : '8px 16px 8px 18px',
+          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+          fontSize: '13px', fontWeight: active ? 600 : 500,
+          textDecoration: 'none', position: 'relative',
+          color: active ? '#ffb690' : 'rgba(167,139,125,0.7)',
+          background: active ? 'rgba(249,115,22,0.08)' : 'transparent',
+          transition: 'all 150ms cubic-bezier(0.4,0,0.2,1)',
+          marginBottom: '2px',
+        }}
+      >
+        {/* Left orange border for active */}
+        {active && (
+          <div style={{
+            position: 'absolute', left: 0, top: '4px', bottom: '4px',
+            width: '3px', background: 'linear-gradient(180deg, #ffb690, #f97316)',
+            borderRadius: '0 3px 3px 0',
+          }} />
+        )}
+        <Icon
+          size={15}
+          style={{
+            flexShrink: 0,
+            color: active ? '#f97316' : 'rgba(167,139,125,0.5)',
+            filter: active ? 'drop-shadow(0 0 4px rgba(249,115,22,0.4))' : 'none',
+            transition: 'color 150ms',
+          }}
+        />
+        {!sidebarCollapsed && (
+          <span style={{
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            transition: 'color 150ms',
+          }}>
+            {item.label}
+          </span>
+        )}
       </NavLink>
     );
   };
@@ -60,74 +93,125 @@ export default function Sidebar() {
   return (
     <aside style={{
       width: w, minWidth: w, height: '100%', display: 'flex', flexDirection: 'column',
-      background: '#0c0c12', borderRight: '1px solid #151520', transition: 'width 200ms',
+      background: 'rgba(21, 15, 12, 0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+      borderRight: '1px solid rgba(255,255,255,0.05)',
+      transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
     }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: sidebarCollapsed ? '16px 0' : '16px 16px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', borderBottom: '1px solid #151520', minHeight: '54px' }}>
-        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#2d5fdf', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Bolt size={14} style={{ color: 'white' }} />
+      {/* ── Logo ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        gap: sidebarCollapsed ? 0 : '10px',
+        padding: sidebarCollapsed ? '16px 0' : '15px 16px 15px 18px',
+        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+        borderBottom: '1px solid rgba(88,66,55,0.18)',
+        minHeight: 56,
+      }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: '9px',
+          background: 'linear-gradient(135deg, #ffb690, #f97316)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+          boxShadow: '0 2px 12px rgba(249,115,22,0.4)',
+        }}>
+          <Flame size={15} color="#341100" strokeWidth={2.5} />
         </div>
         {!sidebarCollapsed && (
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#d0d0e0', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+            <div style={{
+              fontSize: '13px', fontWeight: 800,
+              color: '#f5ede8', lineHeight: 1.2, whiteSpace: 'nowrap',
+              letterSpacing: '-0.01em',
+            }}>
               {organization?.name || 'Rookies HQ'}
             </div>
-            <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em', color: '#3a3a50', textTransform: 'uppercase' }}>
-              Creative Studio
+            <div style={{
+              fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em',
+              color: 'rgba(249,115,22,0.5)', textTransform: 'uppercase',
+            }}>
+              Team's workspace
             </div>
           </div>
         )}
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, overflowY: 'auto', paddingTop: '8px' }}>
-        {sections.MAIN.map(item => <NavItem key={item.key} item={item} />)}
-
+      {/* ── Nav ── */}
+      <nav style={{ flex: 1, overflowY: 'auto', paddingTop: '6px', paddingBottom: '4px' }}>
+        {sections.GENERAL.length > 0 && (
+          <>
+            <SectionLabel>General</SectionLabel>
+            {sections.GENERAL.map(item => <NavItem key={item.key} item={item} />)}
+          </>
+        )}
         {sections.PERFORMANCE.length > 0 && (
           <>
-            {!sidebarCollapsed && <div style={labelStyle}>Performance</div>}
-            {sidebarCollapsed && <div style={{ borderTop: '1px solid #151520', margin: '8px 12px' }} />}
+            <SectionLabel>Performance</SectionLabel>
             {sections.PERFORMANCE.map(item => <NavItem key={item.key} item={item} />)}
           </>
         )}
-
         {sections.TOOLS.length > 0 && (
           <>
-            {!sidebarCollapsed && <div style={labelStyle}>Tools</div>}
-            {sidebarCollapsed && <div style={{ borderTop: '1px solid #151520', margin: '8px 12px' }} />}
+            <SectionLabel>Tools</SectionLabel>
             {sections.TOOLS.map(item => <NavItem key={item.key} item={item} />)}
           </>
         )}
       </nav>
 
-      {/* Footer */}
-      <div style={{ borderTop: '1px solid #151520', padding: '12px' }}>
+      {/* ── Footer ── */}
+      <div style={{ borderTop: '1px solid rgba(88,66,55,0.18)', padding: '12px' }}>
+        {/* Daily Goal */}
         {!sidebarCollapsed && (
-          <div style={{ padding: '0 4px', marginBottom: '10px' }}>
+          <div style={{ padding: '0 4px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.15em', color: '#3a3a50', textTransform: 'uppercase' }}>Daily Goal</span>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: '#2d5fdf' }}>80%</span>
+              <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.14em', color: 'rgba(88,66,55,0.6)', textTransform: 'uppercase' }}>
+                Daily Goal
+              </span>
+              <span style={{ fontSize: '10px', fontWeight: 800, color: '#f97316' }}>80%</span>
             </div>
-            <div style={{ width: '100%', height: '3px', background: '#151520', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ width: '80%', height: '100%', background: '#2d5fdf', borderRadius: '2px' }} />
+            <div style={{ width: '100%', height: '5px', background: 'rgba(88,66,55,0.3)', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div style={{
+                width: '80%', height: '100%',
+                background: 'linear-gradient(90deg, #ffb690, #f97316)',
+                borderRadius: '9999px',
+                boxShadow: '0 0 6px rgba(249,115,22,0.4)',
+              }} />
             </div>
           </div>
         )}
-        <button onClick={logout} style={{
-          display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-          padding: '8px', borderRadius: '6px', background: 'none', border: 'none',
-          fontSize: '12px', color: '#3a3a50', cursor: 'pointer',
-          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-        }}>
-          <LogOut size={14} />
+
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          style={{
+            display: 'flex', alignItems: 'center',
+            gap: sidebarCollapsed ? 0 : '10px',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+            width: '100%', padding: '8px', borderRadius: '8px',
+            background: 'none', border: 'none',
+            fontSize: '12px', color: 'rgba(167,139,125,0.45)',
+            cursor: 'pointer', transition: 'all 150ms',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(88,66,55,0.2)'; e.currentTarget.style.color = 'rgba(240,100,70,0.7)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(167,139,125,0.45)'; }}
+        >
+          <LogOut size={13} />
           {!sidebarCollapsed && <span>Logout</span>}
         </button>
-        <button onClick={toggleSidebar} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%',
-          padding: '6px', borderRadius: '6px', background: 'none', border: 'none',
-          color: '#3a3a50', cursor: 'pointer', marginTop: '4px',
-        }}>
-          {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+
+        {/* Collapse toggle */}
+        <button
+          onClick={toggleSidebar}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '100%', padding: '6px', borderRadius: '8px',
+            background: 'none', border: 'none',
+            color: 'rgba(88,66,55,0.5)', cursor: 'pointer',
+            transition: 'all 150ms', marginTop: '2px',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'rgba(249,115,22,0.6)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'rgba(88,66,55,0.5)'}
+        >
+          {sidebarCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>
       </div>
     </aside>

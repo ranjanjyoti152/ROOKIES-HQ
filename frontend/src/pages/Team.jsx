@@ -3,10 +3,10 @@ import api from '../api/client';
 import { Plus, Radio, UserX, UserCheck, Crown, X } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 
-const card = { background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px' };
-const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#5a5a70', textTransform: 'uppercase', marginBottom: '8px' };
-const inputStyle = { width: '100%', padding: '12px 16px', background: '#131320', border: '1px solid #1c1c2c', borderRadius: '8px', fontSize: '14px', color: '#c0c0d0', outline: 'none', boxSizing: 'border-box' };
-const th = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', color: '#3a3a50', textTransform: 'uppercase', padding: '10px 16px', textAlign: 'left', borderBottom: '1px solid #151520' };
+const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px' };
+const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', marginBottom: '8px' };
+const inputStyle = { width: '100%', padding: '12px 16px', background: '#2f2926', border: '1px solid rgba(88,66,55,0.3)', borderRadius: '8px', fontSize: '14px', color: '#e0c0b1', outline: 'none', boxSizing: 'border-box' };
+const th = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(88,66,55,0.5)', textTransform: 'uppercase', padding: '10px 16px', textAlign: 'left', borderBottom: '1px solid rgba(88,66,55,0.15)' };
 const td = { padding: '12px 16px', borderBottom: '1px solid #111118', fontSize: '13px' };
 
 const ROLES = ['admin','manager','editor','client','hr','marketing'];
@@ -44,10 +44,10 @@ export default function Team() {
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#e0e0ec' }}>Team</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Team</h1>
         <button onClick={() => setShowInvite(true)} style={{
           display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '8px',
-          background: '#2d5fdf', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          background: '#f97316', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
         }}>
           <Plus size={15} /> Invite User
         </button>
@@ -72,29 +72,29 @@ export default function Team() {
                 <td style={td}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
-                      width: '32px', height: '32px', borderRadius: '50%', background: '#131320',
-                      border: '1px solid #1c1c2c', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '11px', fontWeight: 700, color: '#5a5a70'
+                      width: '32px', height: '32px', borderRadius: '50%', background: '#2f2926',
+                      border: '1px solid rgba(88,66,55,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '11px', fontWeight: 700, color: 'rgba(167,139,125,0.5)'
                     }}>
                       {u.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#d0d0e0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#ece0dc', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {u.full_name}
                         {u.is_owner && <Crown size={12} style={{ color: '#eab308' }} />}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#4a4a60', marginTop: '2px' }}>{u.email}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(88,66,55,0.6)', marginTop: '2px' }}>{u.email}</div>
                     </div>
                   </div>
                 </td>
                 <td style={td}>
                   <select value={u.role} onChange={e => handleRole(u.id, e.target.value)} disabled={u.is_owner}
                     style={{
-                      background: 'transparent', color: '#6a6a80', border: 'none', outline: 'none',
+                      background: 'transparent', color: 'rgba(167,139,125,0.6)', border: 'none', outline: 'none',
                       fontSize: '12px', fontWeight: 600, cursor: u.is_owner ? 'default' : 'pointer',
                       opacity: u.is_owner ? 0.5 : 1
                     }}>
-                    {ROLES.map(r => <option key={r} value={r} style={{ background: '#0d0d14' }}>{r}</option>)}
+                    {ROLES.map(r => <option key={r} value={r} style={{ background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>{r}</option>)}
                   </select>
                 </td>
                 <td style={td}>
@@ -135,24 +135,24 @@ export default function Team() {
           <div style={{ ...card, padding: '32px', width: '100%', maxWidth: '420px', animation: 'scaleIn 0.15s ease-out' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#e0e0ec' }}>Invite User</h2>
-              <button onClick={() => setShowInvite(false)} style={{ background: 'none', border: 'none', color: '#4a4a60', cursor: 'pointer' }}><X size={18} /></button>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ece0dc' }}>Invite User</h2>
+              <button onClick={() => setShowInvite(false)} style={{ background: 'none', border: 'none', color: 'rgba(88,66,55,0.6)', cursor: 'pointer' }}><X size={18} /></button>
             </div>
             <form onSubmit={handleInvite}>
               <div style={{ marginBottom: '16px' }}>
                 <label style={label}>Full Name</label>
                 <input type="text" value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} required placeholder="John Doe"
-                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#2d5fdf'} onBlur={e => e.target.style.borderColor = '#1c1c2c'} />
+                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'rgba(88,66,55,0.3)'} />
               </div>
               <div style={{ marginBottom: '16px' }}>
                 <label style={label}>Email</label>
                 <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required placeholder="john@example.com"
-                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#2d5fdf'} onBlur={e => e.target.style.borderColor = '#1c1c2c'} />
+                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'rgba(88,66,55,0.3)'} />
               </div>
               <div style={{ marginBottom: '16px' }}>
                 <label style={label}>Password</label>
                 <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required placeholder="Temporary password"
-                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#2d5fdf'} onBlur={e => e.target.style.borderColor = '#1c1c2c'} />
+                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'rgba(88,66,55,0.3)'} />
               </div>
               <div style={{ marginBottom: '24px' }}>
                 <label style={label}>Role</label>
@@ -164,10 +164,10 @@ export default function Team() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button type="button" onClick={() => setShowInvite(false)} style={{
                   flex: 1, padding: '12px', borderRadius: '8px', background: 'transparent',
-                  border: '1px solid #1c1c2c', fontSize: '14px', fontWeight: 600, color: '#6a6a80', cursor: 'pointer',
+                  border: '1px solid rgba(88,66,55,0.3)', fontSize: '14px', fontWeight: 600, color: 'rgba(167,139,125,0.6)', cursor: 'pointer',
                 }}>Cancel</button>
                 <button type="submit" style={{
-                  flex: 1, padding: '12px', borderRadius: '8px', background: '#2d5fdf',
+                  flex: 1, padding: '12px', borderRadius: '8px', background: '#f97316',
                   border: 'none', fontSize: '14px', fontWeight: 600, color: 'white', cursor: 'pointer',
                 }}>Invite</button>
               </div>

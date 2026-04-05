@@ -3,7 +3,7 @@ import { Palette, Plus, Trash2, Move, Type, StickyNote, Square, Minus, ZoomIn, Z
 
 const STORAGE_KEY = 'rookishq_canvas';
 
-const COLORS = ['#2d5fdf','#a855f7','#22c55e','#eab308','#f97316','#ef4444','#06b6d4','#ec4899'];
+const COLORS = ['#f97316','#a855f7','#22c55e','#eab308','#f97316','#ef4444','#06b6d4','#ec4899'];
 
 function loadCanvas() {
   try {
@@ -51,7 +51,7 @@ export default function Canvas() {
       height: tool === 'sticky' ? 160 : tool === 'text' ? 40 : 100,
       text: tool === 'sticky' ? 'Click to edit...' : tool === 'text' ? 'Text' : 'New Card',
       color: selectedColor,
-      bg: tool === 'sticky' ? selectedColor + '22' : tool === 'text' ? 'transparent' : '#0d0d14',
+      bg: tool === 'sticky' ? selectedColor + '22' : tool === 'text' ? 'transparent' : '#201a18',
     };
     setState(prev => ({ ...prev, items: [...prev.items, newItem] }));
     setTool('select');
@@ -123,11 +123,11 @@ export default function Canvas() {
       {/* Toolbar */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-        background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px', marginBottom: '12px',
+        background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px', marginBottom: '12px',
         flexWrap: 'wrap',
       }}>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: '#e0e0ec', marginRight: '8px' }}>Canvas</span>
-        <div style={{ width: '1px', height: '20px', background: '#1a1a28' }} />
+        <span style={{ fontSize: '13px', fontWeight: 700, color: '#ece0dc', marginRight: '8px' }}>Canvas</span>
+        <div style={{ width: '1px', height: '20px', background: 'rgba(88,66,55,0.2)' }} />
 
         {/* Tools */}
         {TOOL_MODES.map(t => (
@@ -135,13 +135,13 @@ export default function Canvas() {
             display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '6px',
             background: tool === t.id ? 'rgba(45,95,223,0.15)' : 'transparent',
             border: tool === t.id ? '1px solid rgba(45,95,223,0.3)' : '1px solid transparent',
-            color: tool === t.id ? '#5090ff' : '#6a6a80', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 100ms'
+            color: tool === t.id ? '#ffb690' : 'rgba(167,139,125,0.6)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 100ms'
           }}>
             {t.icon} {t.tip}
           </button>
         ))}
 
-        <div style={{ width: '1px', height: '20px', background: '#1a1a28' }} />
+        <div style={{ width: '1px', height: '20px', background: 'rgba(88,66,55,0.2)' }} />
 
         {/* Color Picker */}
         {COLORS.map(c => (
@@ -151,21 +151,21 @@ export default function Canvas() {
         ))}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
-          <button onClick={() => setZoom(z => Math.min(3, z * 1.2))} title="Zoom In" style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', color: '#6a6a80', cursor: 'pointer' }}>
+          <button onClick={() => setZoom(z => Math.min(3, z * 1.2))} title="Zoom In" style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', color: 'rgba(167,139,125,0.6)', cursor: 'pointer' }}>
             <ZoomIn size={15} />
           </button>
-          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} title="Zoom Out" style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', color: '#6a6a80', cursor: 'pointer' }}>
+          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} title="Zoom Out" style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', color: 'rgba(167,139,125,0.6)', cursor: 'pointer' }}>
             <ZoomOut size={15} />
           </button>
-          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }} title="Reset View" style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', color: '#6a6a80', cursor: 'pointer' }}>
+          <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }} title="Reset View" style={{ padding: '6px', borderRadius: '6px', background: 'none', border: 'none', color: 'rgba(167,139,125,0.6)', cursor: 'pointer' }}>
             <RotateCcw size={14} />
           </button>
-          <div style={{ width: '1px', height: '20px', background: '#1a1a28', margin: '0 2px', alignSelf: 'center' }} />
+          <div style={{ width: '1px', height: '20px', background: 'rgba(88,66,55,0.2)', margin: '0 2px', alignSelf: 'center' }} />
           <button onClick={clearCanvas} style={{
-            padding: '6px 10px', borderRadius: '6px', background: 'none', border: 'none', color: '#3a3a50', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 100ms'
+            padding: '6px 10px', borderRadius: '6px', background: 'none', border: 'none', color: 'rgba(88,66,55,0.5)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 100ms'
           }}
             onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#3a3a50'; e.currentTarget.style.background = 'none'; }}>
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(88,66,55,0.5)'; e.currentTarget.style.background = 'none'; }}>
             <Trash2 size={13} /> Clear
           </button>
         </div>
@@ -181,9 +181,9 @@ export default function Canvas() {
         onWheel={onWheel}
         style={{
           flex: 1, position: 'relative', overflow: 'hidden',
-          background: '#08080d', border: '1px solid #1a1a28', borderRadius: '10px',
+          background: '#120d0b', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px',
           cursor: tool === 'select' ? 'default' : 'crosshair',
-          backgroundImage: 'radial-gradient(circle, #1a1a28 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, rgba(88,66,55,0.2) 1px, transparent 1px)',
           backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
           backgroundPosition: `${pan.x}px ${pan.y}px`,
         }}>
@@ -228,7 +228,7 @@ export default function Canvas() {
                     width: '100%', background: 'none', border: 'none', outline: 'none', resize: 'none',
                     fontSize: item.type === 'text' ? '18px' : '13px',
                     fontWeight: item.type === 'text' ? 700 : 500,
-                    color: item.type === 'text' ? item.color : '#d0d0e0',
+                    color: item.type === 'text' ? item.color : '#ece0dc',
                     fontFamily: 'inherit', lineHeight: 1.5,
                     minHeight: '60px',
                   }}
@@ -238,7 +238,7 @@ export default function Canvas() {
                   margin: item.type === 'sticky' ? '8px 0 0' : 0,
                   fontSize: item.type === 'text' ? '18px' : '13px',
                   fontWeight: item.type === 'text' ? 700 : 500,
-                  color: item.type === 'text' ? item.color : '#d0d0e0',
+                  color: item.type === 'text' ? item.color : '#ece0dc',
                   whiteSpace: 'pre-wrap', lineHeight: 1.5, wordBreak: 'break-word',
                 }}>
                   {item.text}
@@ -267,16 +267,16 @@ export default function Canvas() {
             <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               <Palette size={24} style={{ color: '#a855f7' }} />
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: '#c0c0d0', marginBottom: '6px' }}>Creative Canvas</div>
-            <div style={{ fontSize: '12px', color: '#4a4a60', textAlign: 'center', maxWidth: '280px', lineHeight: 1.6 }}>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: '#e0c0b1', marginBottom: '6px' }}>Creative Canvas</div>
+            <div style={{ fontSize: '12px', color: 'rgba(88,66,55,0.6)', textAlign: 'center', maxWidth: '280px', lineHeight: 1.6 }}>
               Pick a tool above and click anywhere to add sticky notes, text blocks, or cards.<br />
-              <span style={{ color: '#3a3a50' }}>Right-click any item to delete it.</span>
+              <span style={{ color: 'rgba(88,66,55,0.5)' }}>Right-click any item to delete it.</span>
             </div>
           </div>
         )}
 
         {/* HUD */}
-        <div style={{ position: 'absolute', bottom: '12px', left: '16px', fontSize: '10px', color: '#2a2a3a', fontWeight: 700, letterSpacing: '0.05em' }}>
+        <div style={{ position: 'absolute', bottom: '12px', left: '16px', fontSize: '10px', color: 'rgba(88,66,55,0.5)', fontWeight: 700, letterSpacing: '0.05em' }}>
           {Math.round(zoom * 100)}% • {state.items.length} items
         </div>
       </div>

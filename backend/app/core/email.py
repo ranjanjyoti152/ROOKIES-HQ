@@ -176,3 +176,70 @@ async def send_otp_email(to_email: str, otp: str, full_name: str, org_name: str)
         password=settings.SMTP_PASSWORD,
         start_tls=True,
     )
+
+def _project_assigned_email_html(project_name: str, full_name: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>New Project Assignment: {project_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#08080d;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#08080d;min-width:100%;">
+  <tr>
+    <td align="center" style="padding:50px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;">
+        <tr>
+          <td align="center" style="padding-bottom:32px;">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="width:48px;height:48px;background:#f97316;border-radius:12px;text-align:center;vertical-align:middle;font-size:24px;">🔥</td>
+                <td style="padding-left:14px;vertical-align:middle;">
+                  <span style="font-size:18px;font-weight:800;letter-spacing:0.35em;color:#e0e0ec;font-family:'Inter',sans-serif;">ROOKIES HQ</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#130e0c;border:1px solid #201a18;border-radius:16px;padding:36px;text-align:center;">
+            <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.18em;color:#f97316;text-transform:uppercase;font-family:'Inter',sans-serif;">Project Assignment</p>
+            <h1 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#e0e0ec;line-height:1.3;font-family:'Inter',sans-serif;">You're on the team</h1>
+            <p style="margin:0 0 8px;font-size:14px;color:#a78b7d;line-height:1.6;font-family:'Inter',sans-serif;">Hi <strong>{full_name}</strong>,</p>
+            <p style="margin:0 0 32px;font-size:14px;color:#a78b7d;line-height:1.6;font-family:'Inter',sans-serif;">
+              You've been assigned to the <strong style="color:#f97316;">{project_name}</strong> project.<br/>Check your dashboard to view details and jump in!
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>"""
+
+
+async def send_project_assigned_email(to_email: str, project_name: str, full_name: str) -> None:
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"You've been assigned to {project_name}"
+    msg["From"] = f"Rookies HQ <{settings.SMTP_USER}>"
+    msg["To"] = to_email
+
+    html_body = _project_assigned_email_html(project_name, full_name)
+    plain_body = f"Hi {full_name},\n\nYou've been assigned to the {project_name} project.\nCheck your dashboard for details.\n\n— Rookies HQ Team"
+
+    msg.attach(MIMEText(plain_body, "plain"))
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname=settings.SMTP_HOST,
+            port=settings.SMTP_PORT,
+            username=settings.SMTP_USER,
+            password=settings.SMTP_PASSWORD,
+            start_tls=True,
+        )
+    except Exception as e:
+        print(f"Failed to send email to {to_email}: {e}")

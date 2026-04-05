@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
+from app.schemas.user import UserListResponse
 
 
 class ProjectCreate(BaseModel):
@@ -10,6 +11,7 @@ class ProjectCreate(BaseModel):
     description: Optional[str] = None
     status: str = "active"
     tag_ids: Optional[List[UUID]] = None
+    member_ids: Optional[List[UUID]] = []
 
 
 class ProjectUpdate(BaseModel):
@@ -17,6 +19,7 @@ class ProjectUpdate(BaseModel):
     client_name: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
+    member_ids: Optional[List[UUID]] = None
 
 
 class ProjectResponse(BaseModel):
@@ -26,6 +29,7 @@ class ProjectResponse(BaseModel):
     client_name: Optional[str] = None
     description: Optional[str] = None
     status: str
+    assigned_members: Optional[List[UserListResponse]] = []
     created_at: datetime
     updated_at: datetime
 
