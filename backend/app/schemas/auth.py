@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from uuid import UUID
-
+from datetime import datetime
 
 class RegisterRequest(BaseModel):
     """First user registration - creates org + admin user."""
@@ -10,21 +10,17 @@ class RegisterRequest(BaseModel):
     password: str
     full_name: str
 
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-
 
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
-
 class RefreshRequest(BaseModel):
     refresh_token: str
-
 
 class UserResponse(BaseModel):
     id: UUID
@@ -36,6 +32,7 @@ class UserResponse(BaseModel):
     is_owner: bool
     is_active: bool
     is_checked_in: bool
+    last_check_in: Optional[datetime] = None
     sidebar_items: Optional[List[dict]] = None
 
     model_config = {"from_attributes": True}

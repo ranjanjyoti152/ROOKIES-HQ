@@ -23,21 +23,47 @@ const typeColors = {
 };
 
 export default function Arena() {
-  const { user } = useAuthStore();
-  const [checkedIn, setCheckedIn] = useState(user?.is_checked_in || false);
+  const { user, fetchMe } = useAuthStore();
+  const checkedIn = user?.is_checked_in || false;
   const [tasks, setTasks] = useState([]);
   const [unassigned, setUnassigned] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [stats, setStats] = useState({ 
+    active_projects: 0, total_tasks: 0, completed_tasks: 0, 
+    total_time_logged: 0, efficiency_score: 0 
+  });
+  const [activities, setActivities] = useState([]);
+  const [activeTime, setActiveTime] = useState("");
+
+  useEffect(() => {
+    if (user?.is_checked_in && user?.last_check_in) {
+      const update = () => {
+        const diff = Date.now() - new Date(user.last_check_in).getTime();
+        const hrs = Math.floor(diff / 3600000).toString().padStart(2, '0');
+        const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+        const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+        setActiveTime(`${hrs}:${mins}:${secs}`);
+      };
+      update();
+      const int = setInterval(update, 1000);
+      return () => clearInterval(int);
+    }
+  }, [user?.is_checked_in, user?.last_check_in]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [myRes, allRes] = await Promise.all([
+        const [myRes, allRes, statRes, notifRes] = await Promise.all([
           api.get('/tasks/my-work'),
           api.get('/tasks', { params: { status_filter: 'unassigned' } }),
+          api.get('/analytics/dashboard'),
+          api.get('/notifications?limit=5'),
         ]);
         setTasks(myRes.data);
         setUnassigned(allRes.data);
+        setStats(statRes.data);
+        setActivities(notifRes.data);
       } catch {} finally { setLoading(false); }
     };
     fetchData();
@@ -52,6 +78,13 @@ export default function Arena() {
     } catch {}
   };
 
+  const toggleCheckIn = async () => {
+    try {
+      await api.post('/users/me/checkin');
+      await fetchMe();
+    } catch {}
+  };
+
   const handleTransition = async (taskId, targetStatus, attachmentLink) => {
     try {
       const body = { target_status: targetStatus };
@@ -62,7 +95,8 @@ export default function Arena() {
     } catch (err) { alert(err.response?.data?.detail || 'Transition failed'); }
   };
 
-  const activeTasks = tasks.filter(t => !['closed'].includes(t.status));
+  const activeTasks = tasks.filter(t => !['closed'].includes(t.status) && !t.is_private);
+  const privateTasks = tasks.filter(t => t.is_private);
 
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
@@ -77,10 +111,10 @@ export default function Arena() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 2s infinite' }} />
               <span style={{ fontSize: '12px', fontWeight: 700, color: '#d0d0e0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Checked In</span>
-              <span style={{ fontSize: '11px', color: '#3a3a50' }}>Session started {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span style={{ fontSize: '11px', color: '#3a3a50' }}>Session {activeTime}</span>
             </div>
           )}
-          <button onClick={() => setCheckedIn(!checkedIn)} style={{
+          <button onClick={toggleCheckIn} style={{
             padding: '10px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms',
             background: checkedIn ? '#2d5fdf' : 'transparent',
             border: checkedIn ? 'none' : '1px solid #1c1c2c',
@@ -209,20 +243,20 @@ export default function Arena() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' }}>
               <div style={{ background: '#101018', border: '1px solid #151520', borderRadius: '8px', padding: '14px' }}>
                 <div style={label}>Hours Logged</div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>32.4</div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>{(stats.total_time_logged / 3600).toFixed(1)}</div>
               </div>
               <div style={{ background: '#101018', border: '1px solid #151520', borderRadius: '8px', padding: '14px' }}>
                 <div style={label}>Tasks Done</div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>18</div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>{stats.completed_tasks}</div>
               </div>
             </div>
             <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #151520' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={label}>Weekly Efficiency</span>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#22c55e' }}>94%</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: stats.efficiency_score > 50 ? '#22c55e' : '#f97316' }}>{stats.efficiency_score}%</span>
               </div>
               <div style={{ width: '100%', height: '4px', background: '#151520', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ width: '94%', height: '100%', background: '#22c55e', borderRadius: '2px' }} />
+                <div style={{ width: `${stats.efficiency_score}%`, height: '100%', background: stats.efficiency_score > 50 ? '#22c55e' : '#f97316', borderRadius: '2px', transition: 'width 1s ease-out' }} />
               </div>
             </div>
           </div>
@@ -235,40 +269,44 @@ export default function Arena() {
                 <Plus size={12} style={{ color: 'white' }} />
               </button>
             </div>
-            {[
-              { text: 'Backup local cache files', sub: 'Personal • 10m', done: false },
-              { text: 'Check plugins for update', sub: 'System • Completed', done: true },
-              { text: 'Update workstation drivers', sub: 'Maintenance', done: false },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < 2 ? '12px' : 0 }}>
-                <input type="checkbox" defaultChecked={item.done}
-                  style={{ width: '15px', height: '15px', marginTop: '2px', accentColor: '#2d5fdf', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 500, color: item.done ? '#3a3a50' : '#c0c0d0', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</div>
-                  <div style={{ fontSize: '10px', color: '#3a3a50', marginTop: '2px' }}>{item.sub}</div>
+            {privateTasks.length === 0 ? (
+              <div style={{ fontSize: '12px', color: '#5a5a70', padding: '10px 0', textAlign: 'center' }}>No private tasks.</div>
+            ) : (
+              privateTasks.map((item, i) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < privateTasks.length - 1 ? '12px' : 0 }}>
+                  <input type="checkbox" defaultChecked={item.status === 'closed'}
+                    onChange={(e) => handleTransition(item.id, e.target.checked ? 'closed' : 'unassigned')}
+                    style={{ width: '15px', height: '15px', marginTop: '2px', accentColor: '#2d5fdf', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: item.status === 'closed' ? '#3a3a50' : '#c0c0d0', textDecoration: item.status === 'closed' ? 'line-through' : 'none' }}>{item.title}</div>
+                    <div style={{ fontSize: '10px', color: '#3a3a50', marginTop: '2px' }}>{item.task_type?.replace('_', ' ') || 'Personal'}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Arena Activity */}
           <div style={{ ...card, padding: '16px 18px' }}>
             <span style={heading}>Arena Activity</span>
             <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { initials: 'SL', name: 'Sarah L.', action: 'just claimed', target: 'Project Redline' },
-                { initials: 'DK', name: 'David K.', action: 'moved task to', target: 'Review' },
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#131320', border: '1px solid #1c1c2c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#5a5a70', flexShrink: 0 }}>
-                    {item.initials}
+              {activities.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#5a5a70', padding: '10px 0', textAlign: 'center' }}>No recent activity.</div>
+              ) : (
+                activities.map(item => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#131320', border: '1px solid #1c1c2c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#5a5a70', flexShrink: 0 }}>
+                      {'SYS'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '12px', color: '#5a5a70', lineHeight: 1.4 }}>
+                        <span style={{ fontWeight: 600, color: '#c0c0d0' }}>{item.title}</span>
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#4a4a60', marginTop: '2px' }}>{item.body}</p>
+                    </div>
                   </div>
-                  <p style={{ fontSize: '12px', color: '#5a5a70', lineHeight: 1.4 }}>
-                    <span style={{ fontWeight: 600, color: '#c0c0d0' }}>{item.name}</span> {item.action}{' '}
-                    <span style={{ color: '#2d5fdf' }}>{item.target}</span>
-                  </p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

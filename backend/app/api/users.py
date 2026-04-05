@@ -13,6 +13,29 @@ router = APIRouter(prefix="/users", tags=["users"])
 VALID_ROLES = {"admin", "manager", "editor", "client", "hr", "marketing"}
 
 
+from datetime import datetime, timezone
+
+@router.post("/me/checkin")
+async def toggle_checkin(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle check-in status for the current user."""
+    # We need to fetch the user freshly from DB to update
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one()
+
+    # Toggle
+    user.is_checked_in = not user.is_checked_in
+    if user.is_checked_in:
+        user.last_check_in = datetime.now(timezone.utc)
+    
+    await db.flush()
+    return {
+        "is_checked_in": user.is_checked_in,
+        "last_check_in": user.last_check_in
+    }
+
 @router.get("", response_model=List[UserListResponse])
 async def list_users(
     current_user: User = Depends(require_roles("admin", "manager", "hr")),

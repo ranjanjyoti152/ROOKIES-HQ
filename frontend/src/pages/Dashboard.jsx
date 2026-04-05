@@ -48,17 +48,30 @@ const badgeColors = {
 
 export default function Dashboard() {
   const { user } = useAuthStore();
-  const [stats, setStats] = useState({ projects: 0, tasks: 0, completed: 0 });
+  const [stats, setStats] = useState({ 
+    active_projects: 0, 
+    total_tasks: 0, 
+    completed_tasks: 0, 
+    total_time_logged: 0,
+    efficiency_score: 0 
+  });
   const [recentTasks, setRecentTasks] = useState([]);
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [projRes, taskRes] = await Promise.all([api.get('/projects'), api.get('/tasks')]);
-        const tasks = taskRes.data;
-        setStats({ projects: projRes.data.length, tasks: tasks.length, completed: tasks.filter(t => t.status === 'closed').length });
-        setRecentTasks(tasks.slice(0, 6));
-      } catch {}
+        const [statRes, taskRes, notifRes] = await Promise.all([
+          api.get('/analytics/dashboard'), 
+          api.get('/tasks/my-work'),
+          api.get('/notifications?limit=5')
+        ]);
+        setStats(statRes.data);
+        setRecentTasks(taskRes.data.slice(0, 6));
+        setActivities(notifRes.data.slice(0, 5));
+      } catch (err) {
+        console.error("Failed to load dashboard data", err);
+      }
     };
     fetchData();
   }, []);
@@ -75,10 +88,10 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
-        <StatCard label="Active Projects" value={stats.projects} trend="+2" />
-        <StatCard label="Total Tasks" value={stats.tasks} />
-        <StatCard label="Completed" value={stats.completed} trend="+5" />
-        <StatCard label="Time Logged" value="—" />
+        <StatCard label="Active Projects" value={stats.active_projects} trend="+2" />
+        <StatCard label="Total Tasks" value={stats.total_tasks} />
+        <StatCard label="Completed" value={stats.completed_tasks} trend="+5" />
+        <StatCard label="Time Logged" value={`${Math.round(stats.total_time_logged / 3600)}h`} />
       </div>
 
       {/* Content Grid */}
@@ -153,20 +166,20 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' }}>
               <div style={{ background: '#101018', border: '1px solid #151520', borderRadius: '8px', padding: '14px' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', color: '#3a3a50', textTransform: 'uppercase' }}>Hours Logged</div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>32.4</div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>{(stats.total_time_logged / 3600).toFixed(1)}</div>
               </div>
               <div style={{ background: '#101018', border: '1px solid #151520', borderRadius: '8px', padding: '14px' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', color: '#3a3a50', textTransform: 'uppercase' }}>Tasks Done</div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>{stats.completed}</div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#e0e0ec', marginTop: '6px' }}>{stats.completed_tasks}</div>
               </div>
             </div>
             <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #151520' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', color: '#3a3a50', textTransform: 'uppercase' }}>Weekly Efficiency</span>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#22c55e' }}>94%</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: stats.efficiency_score > 50 ? '#22c55e' : '#f97316' }}>{stats.efficiency_score}%</span>
               </div>
               <div style={{ width: '100%', height: '4px', background: '#151520', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ width: '94%', height: '100%', background: '#22c55e', borderRadius: '2px' }} />
+                <div style={{ width: `${stats.efficiency_score}%`, height: '100%', background: stats.efficiency_score > 50 ? '#22c55e' : '#f97316', borderRadius: '2px', transition: 'width 1s ease-out' }} />
               </div>
             </div>
           </div>
@@ -175,20 +188,28 @@ export default function Dashboard() {
           <div style={{ ...cardStyle, padding: '16px 18px' }}>
             <span style={headingStyle}>Arena Activity</span>
             <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { initials: 'SL', name: 'Sarah L.', action: 'just claimed', target: 'Project Redline' },
-                { initials: 'DK', name: 'David K.', action: 'moved task to', target: 'Review' },
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#131320', border: '1px solid #1c1c2c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#5a5a70', flexShrink: 0 }}>
-                    {item.initials}
-                  </div>
-                  <p style={{ fontSize: '12px', color: '#5a5a70', lineHeight: 1.4 }}>
-                    <span style={{ fontWeight: 600, color: '#c0c0d0' }}>{item.name}</span> {item.action}{' '}
-                    <span style={{ color: '#2d5fdf' }}>{item.target}</span>
-                  </p>
-                </div>
-              ))}
+              {activities.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#5a5a70', padding: '10px 0', textAlign: 'center' }}>No recent activity.</div>
+              ) : (
+                activities.map(item => {
+                  /* Parse notification body simply */
+                  const isTask = item.title.includes('Task');
+                  const target = item.title;
+                  return (
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#131320', border: '1px solid #1c1c2c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#5a5a70', flexShrink: 0 }}>
+                        {'SYS'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '12px', color: '#5a5a70', lineHeight: 1.4 }}>
+                          <span style={{ fontWeight: 600, color: '#c0c0d0' }}>{item.title}</span> 
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#4a4a60', marginTop: '2px' }}>{item.body}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

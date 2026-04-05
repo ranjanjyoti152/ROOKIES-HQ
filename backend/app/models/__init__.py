@@ -11,6 +11,7 @@ from app.models.lead import Lead, LeadFollowup
 from app.models.automation_rule import AutomationRule
 from app.models.leaderboard import LeaderboardEntry
 from app.models.note import Note
+from app.models.canvas_board import CanvasBoard
 
 __all__ = [
     "Organization",
@@ -28,4 +29,5 @@ __all__ = [
     "AutomationRule",
     "LeaderboardEntry",
     "Note",
+    "CanvasBoard",
 ]

@@ -3,13 +3,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import settings
 from app.core.exceptions import global_exception_handler
-from app.api import auth, users, projects, tasks, comments, time_entries, notifications, leads, automations, leaderboard, websocket
+from app.api import auth, users, projects, tasks, comments, time_entries, notifications, leads, automations, leaderboard, websocket, analytics, notes, canvas
 
+
+import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     print("🚀 Rookies HQ API starting up...")
+    
+    try:
+        print("🔄 Running database migrations...")
+        import alembic.config
+        alembic_args = ["--raiseerr", "upgrade", "head"]
+        await asyncio.to_thread(alembic.config.main, argv=alembic_args)
+        print("✅ Database migrations complete.")
+    except Exception as e:
+        print(f"⚠️ Migrations failed or already configured: {e}")
+        
     yield
     print("🛑 Rookies HQ API shutting down...")
 
@@ -45,6 +57,9 @@ app.include_router(leads.router, prefix="/api")
 app.include_router(automations.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
 app.include_router(websocket.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
+app.include_router(notes.router, prefix="/api")
+app.include_router(canvas.router, prefix="/api")
 
 
 @app.get("/api/health")

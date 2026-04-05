@@ -115,6 +115,7 @@ async def get_me(
         is_owner=current_user.is_owner,
         is_active=current_user.is_active,
         is_checked_in=current_user.is_checked_in,
+        last_check_in=current_user.last_check_in,
         sidebar_items=sidebar_items,
     )
 
