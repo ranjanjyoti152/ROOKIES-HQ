@@ -1,0 +1,46 @@
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from uuid import UUID
+
+
+class RegisterRequest(BaseModel):
+    """First user registration - creates org + admin user."""
+    org_name: str
+    email: EmailStr
+    password: str
+    full_name: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    org_id: UUID
+    email: str
+    full_name: str
+    avatar_url: Optional[str] = None
+    role: str
+    is_owner: bool
+    is_active: bool
+    is_checked_in: bool
+    sidebar_items: Optional[List[dict]] = None
+
+    model_config = {"from_attributes": True}
+
+
+class MeResponse(BaseModel):
+    user: UserResponse
+    organization: dict

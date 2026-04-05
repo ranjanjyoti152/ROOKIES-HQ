@@ -1,0 +1,156 @@
+import { useState, useEffect } from 'react';
+import api from '../api/client';
+import { Zap, Plus, ToggleLeft, ToggleRight, Trash2, X } from 'lucide-react';
+
+const card = { background: '#0d0d14', border: '1px solid #1a1a28', borderRadius: '10px' };
+const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#5a5a70', textTransform: 'uppercase', marginBottom: '8px' };
+const inputStyle = { width: '100%', padding: '12px 16px', background: '#131320', border: '1px solid #1c1c2c', borderRadius: '8px', fontSize: '14px', color: '#c0c0d0', outline: 'none', boxSizing: 'border-box' };
+
+export default function Automations() {
+  const [rules, setRules] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ name: '', trigger_type: 'task_status_change', action_type: 'send_notification' });
+
+  const fetch = () => api.get('/automations').then(r => setRules(r.data)).catch(() => {});
+  useEffect(() => { fetch(); }, []);
+
+  const handleCreate = async (e) => { e.preventDefault(); try { await api.post('/automations', form); setShowCreate(false); setForm({ name: '', trigger_type: 'task_status_change', action_type: 'send_notification' }); fetch(); } catch {} };
+  const toggle = async (id) => { try { await api.post(`/automations/${id}/toggle`); fetch(); } catch {} };
+  const del = async (id) => { try { await api.delete(`/automations/${id}`); setRules(p => p.filter(r => r.id !== id)); } catch {} };
+
+  return (
+    <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#e0e0ec' }}>Automations</h1>
+          <p style={{ fontSize: '13px', color: '#4a4a60', marginTop: '4px' }}>Configure triggers and actions for your workflow</p>
+        </div>
+        <button onClick={() => setShowCreate(true)} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '8px',
+          background: '#2d5fdf', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+        }}>
+          <Plus size={15} /> New Rule
+        </button>
+      </div>
+
+      {/* Rules List */}
+      {rules.length === 0 ? (
+        <div style={{ ...card, padding: '60px 20px', textAlign: 'center' }}>
+          <Zap size={40} style={{ color: '#2a2a3a', margin: '0 auto 14px' }} />
+          <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#c0c0d0', marginBottom: '6px' }}>No automation rules yet</h3>
+          <p style={{ fontSize: '12px', color: '#3a3a50' }}>Create your first rule to automate repetitive tasks</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {rules.map(r => (
+            <div key={r.id} style={{ ...card, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border 150ms' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#2a2a3a'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a28'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '8px',
+                  background: r.is_active ? 'rgba(234,179,8,0.1)' : '#101018',
+                  border: `1px solid ${r.is_active ? 'rgba(234,179,8,0.2)' : '#151520'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Zap size={16} style={{ color: r.is_active ? '#eab308' : '#3a3a50' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#d0d0e0' }}>{r.name}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700,
+                      background: 'rgba(45,95,223,0.12)', color: '#5090ff', textTransform: 'uppercase',
+                    }}>{r.trigger_type.replace(/_/g, ' ')}</span>
+                    <span style={{ fontSize: '11px', color: '#3a3a50' }}>→</span>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700,
+                      background: 'rgba(34,197,94,0.12)', color: '#22c55e', textTransform: 'uppercase',
+                    }}>{r.action_type.replace(/_/g, ' ')}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button onClick={() => toggle(r.id)} style={{
+                  padding: '6px 8px', borderRadius: '6px', background: 'none', border: 'none', cursor: 'pointer',
+                  transition: 'background 150ms',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#101018'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                  {r.is_active
+                    ? <ToggleRight size={22} style={{ color: '#22c55e' }} />
+                    : <ToggleLeft size={22} style={{ color: '#3a3a50' }} />
+                  }
+                </button>
+                <button onClick={() => del(r.id)} style={{
+                  padding: '6px 8px', borderRadius: '6px', background: 'none', border: 'none',
+                  color: '#3a3a50', cursor: 'pointer', transition: 'all 150ms',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#3a3a50'; e.currentTarget.style.background = 'none'; }}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreate && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.65)' }}
+          onClick={() => setShowCreate(false)}>
+          <div style={{ ...card, padding: '32px', width: '100%', maxWidth: '420px', animation: 'scaleIn 0.15s ease-out' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#e0e0ec' }}>New Automation Rule</h2>
+              <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: '#4a4a60', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleCreate}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={label}>Rule Name</label>
+                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Notify on Review"
+                  style={inputStyle} onFocus={e => e.target.style.borderColor = '#2d5fdf'} onBlur={e => e.target.style.borderColor = '#1c1c2c'} />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={label}>Trigger</label>
+                <select value={form.trigger_type} onChange={e => setForm({...form, trigger_type: e.target.value})}
+                  style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <option value="task_status_change">Task Status Change</option>
+                  <option value="lead_conversion">Lead Conversion</option>
+                  <option value="comment_added">Comment Added</option>
+                </select>
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={label}>Action</label>
+                <select value={form.action_type} onChange={e => setForm({...form, action_type: e.target.value})}
+                  style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <option value="send_notification">Send Notification</option>
+                  <option value="move_task">Move Task</option>
+                  <option value="assign_user">Assign User</option>
+                  <option value="add_points">Add Points</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => setShowCreate(false)} style={{
+                  flex: 1, padding: '12px', borderRadius: '8px', background: 'transparent',
+                  border: '1px solid #1c1c2c', fontSize: '14px', fontWeight: 600, color: '#6a6a80', cursor: 'pointer',
+                }}>Cancel</button>
+                <button type="submit" style={{
+                  flex: 1, padding: '12px', borderRadius: '8px', background: '#2d5fdf',
+                  border: 'none', fontSize: '14px', fontWeight: 600, color: 'white', cursor: 'pointer',
+                }}>Create</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+      `}</style>
+    </div>
+  );
+}
