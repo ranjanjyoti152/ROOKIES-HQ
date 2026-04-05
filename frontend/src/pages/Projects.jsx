@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/client';
-import { Plus, FolderOpen, Search, LayoutGrid, List, X } from 'lucide-react';
+import { Plus, FolderOpen, Search, LayoutGrid, List, X, Trash2 } from 'lucide-react';
 
 const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px' };
 const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', marginBottom: '8px' };
@@ -19,8 +19,9 @@ export default function Projects() {
   const [view, setView] = useState('grid');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', client_name: '', description: '', member_ids: [] });
+  const [form, setForm] = useState({ name: '', client_name: '', description: '', status: 'active', member_ids: [] });
   const [users, setUsers] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchProjects = async () => { try { const r = await api.get('/projects'); setProjects(r.data); } catch {} finally { setLoading(false); } };
   useEffect(() => { 
@@ -31,15 +32,27 @@ export default function Projects() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try { 
-      if (form.id) {
-        await api.put(`/projects/${form.id}`, form);
+      const { id, ...payload } = form;
+      if (id) {
+        await api.put(`/projects/${id}`, payload);
       } else {
-        await api.post('/projects', form); 
+        await api.post('/projects', payload); 
       }
       setShowCreate(false); 
-      setForm({ name: '', client_name: '', description: '', member_ids: [] }); 
+      setForm({ name: '', client_name: '', description: '', status: 'active', member_ids: [] }); 
       fetchProjects(); 
     } catch {}
+  };
+
+  const handleDelete = async (projectId) => {
+    if (!confirm('Are you sure you want to archive this project?')) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/projects/${projectId}`);
+      setShowCreate(false);
+      setForm({ name: '', client_name: '', description: '', status: 'active', member_ids: [] });
+      fetchProjects();
+    } catch {} finally { setDeleting(false); }
   };
 
   const openEdit = (p) => {
@@ -48,6 +61,7 @@ export default function Projects() {
       name: p.name,
       client_name: p.client_name || '',
       description: p.description || '',
+      status: p.status || 'active',
       member_ids: p.assigned_members ? p.assigned_members.map(m => m.id) : []
     });
     setShowCreate(true);
@@ -60,7 +74,7 @@ export default function Projects() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Projects</h1>
-        <button onClick={() => { setForm({ name: '', client_name: '', description: '', member_ids: [] }); setShowCreate(true); }} style={{
+        <button onClick={() => { setForm({ name: '', client_name: '', description: '', status: 'active', member_ids: [] }); setShowCreate(true); }} style={{
           display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '8px',
           background: '#f97316', border: 'none', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
         }}>
@@ -174,7 +188,18 @@ export default function Projects() {
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ece0dc' }}>{form.id ? 'Edit Project' : 'New Project'}</h2>
-              <button type="button" onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: 'rgba(88,66,55,0.6)', cursor: 'pointer' }}><X size={18} /></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {form.id && (
+                  <button type="button" onClick={() => handleDelete(form.id)} disabled={deleting} style={{
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px',
+                    color: '#ef4444', cursor: 'pointer', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: '4px',
+                    fontSize: '11px', fontWeight: 600, opacity: deleting ? 0.5 : 1,
+                  }}>
+                    <Trash2 size={13} /> {deleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                )}
+                <button type="button" onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: 'rgba(88,66,55,0.6)', cursor: 'pointer' }}><X size={18} /></button>
+              </div>
             </div>
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '20px' }}>
@@ -192,6 +217,18 @@ export default function Projects() {
                 <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} placeholder="Brief project description..."
                   style={{ ...inputStyle, resize: 'none' }} onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'rgba(88,66,55,0.3)'} />
               </div>
+              {form.id && (
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={label}>Status</label>
+                  <select value={form.status} onChange={e => setForm({...form, status: e.target.value})}
+                    style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="completed">Completed</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+              )}
               <div style={{ marginBottom: '24px' }}>
                 <label style={label}>Team Members</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
