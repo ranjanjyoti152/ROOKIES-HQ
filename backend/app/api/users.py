@@ -13,6 +13,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 VALID_ROLES = {"admin", "manager", "editor", "client", "hr", "marketing"}
 
 
+from app.models.time_entry import TimeEntry
 from datetime import datetime, timezone
 
 @router.post("/me/checkin")
@@ -21,11 +22,27 @@ async def toggle_checkin(
     db: AsyncSession = Depends(get_db),
 ):
     """Toggle check-in status for the current user."""
-    # We need to fetch the user freshly from DB to update
     result = await db.execute(select(User).where(User.id == current_user.id))
     user = result.scalar_one()
 
-    # Toggle
+    # If checking out (is_checked_in transitioning from True -> False)
+    if user.is_checked_in and user.last_check_in:
+        now = datetime.now(timezone.utc)
+        duration_delta = now - user.last_check_in
+        duration_seconds = int(duration_delta.total_seconds())
+        
+        # Log the session time entry
+        new_entry = TimeEntry(
+            org_id=user.org_id,
+            user_id=user.id,
+            task_id=None,
+            started_at=user.last_check_in,
+            ended_at=now,
+            duration_seconds=duration_seconds,
+        )
+        db.add(new_entry)
+
+    # Toggle state
     user.is_checked_in = not user.is_checked_in
     if user.is_checked_in:
         user.last_check_in = datetime.now(timezone.utc)
