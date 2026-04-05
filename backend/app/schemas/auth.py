@@ -14,6 +14,22 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class OTPVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class JoinRequest(BaseModel):
+    """Join an existing workspace — no new org is created."""
+    org_slug: str       # workspace identifier shown on the join screen
+    email: EmailStr
+    password: str
+    full_name: str
+
+class JoinOTPVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    org_slug: str
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -30,6 +46,7 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     role: str
     is_owner: bool
+    is_superadmin: bool = False
     is_active: bool
     is_checked_in: bool
     last_check_in: Optional[datetime] = None

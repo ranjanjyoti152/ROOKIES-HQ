@@ -9,6 +9,13 @@ export default defineConfig({
     host: true,
     cors: true,
     allowedHosts: true,
+    // Fix HMR when accessed via a remote domain/proxy.
+    // Without this, Vite tries to connect the WebSocket to localhost
+    // instead of the actual host the user is on, causing constant full-page reloads.
+    hmr: {
+      clientPort: 443,      // use the proxy's HTTPS port
+      protocol: 'wss',      // wss:// for HTTPS domains
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8001',

@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
+    # SMTP / Email
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = "rookies.dev.hq@gmail.com"
+    SMTP_PASSWORD: str = ""
+
     # API
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000

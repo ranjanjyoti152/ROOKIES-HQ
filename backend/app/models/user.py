@@ -17,6 +17,7 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="editor")
     is_owner: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_superadmin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_checked_in: Mapped[bool] = mapped_column(Boolean, default=False)
     last_check_in: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

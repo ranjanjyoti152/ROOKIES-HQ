@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useAuthStore from './store/authStore';
@@ -18,6 +18,7 @@ import Automations from './pages/Automations';
 import WorkDashboard from './pages/WorkDashboard';
 import Canvas from './pages/Canvas';
 import Notes from './pages/Notes';
+import Workspaces from './pages/Workspaces';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30000, retry: 1 } },
@@ -39,16 +40,22 @@ function ProtectedRoute({ children }) {
 
 function PublicRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuthStore();
-  if (isLoading) return null;
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+  // While loading, show the page content anyway (avoids blank flash/reload feel).
+  // If already authenticated, redirect to dashboard once loading is done.
+  if (!isLoading && isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return children;
 }
 
 export default function App() {
-  const initialize = useAuthStore((s) => s.initialize);
-
+  // Use a ref so initialize() is only called once on mount,
+  // regardless of store re-renders.
+  const initialized = useRef(false);
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    if (!initialized.current) {
+      initialized.current = true;
+      useAuthStore.getState().initialize();
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -73,6 +80,7 @@ export default function App() {
             <Route path="/canvas" element={<Canvas />} />
             <Route path="/notes" element={<Notes />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/workspaces" element={<Workspaces />} />
           </Route>
 
           {/* Fallback */}

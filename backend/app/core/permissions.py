@@ -46,8 +46,8 @@ def require_role(*allowed_roles: str):
     return checker
 
 
-def get_sidebar_items(role: str) -> List[dict]:
-    """Return sidebar menu items filtered by role."""
+def get_sidebar_items(user) -> List[dict]:
+    """Return sidebar menu items filtered by role and superadmin status."""
     all_items = [
         {"key": "dashboard",       "label": "Dashboard",       "icon": "LayoutDashboard",  "path": "/dashboard"},
         {"key": "arena",           "label": "Arena",           "icon": "Swords",           "path": "/arena"},
@@ -64,4 +64,9 @@ def get_sidebar_items(role: str) -> List[dict]:
         {"key": "notes",           "label": "Notes",           "icon": "StickyNote",       "path": "/notes"},
         {"key": "notifications",   "label": "Notifications",   "icon": "Bell",             "path": "/notifications"},
     ]
-    return [item for item in all_items if check_permission(role, item["key"])]
+    
+    # Add Workspaces for superadmins
+    if getattr(user, "is_superadmin", False):
+        all_items.append({"key": "workspaces", "label": "Workspaces", "icon": "Building2", "path": "/workspaces"})
+        
+    return [item for item in all_items if item["key"] == "workspaces" or check_permission(user.role, item["key"])]
