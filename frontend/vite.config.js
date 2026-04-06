@@ -15,7 +15,16 @@ export default defineConfig({
     host: true,
     cors: true,
     allowedHosts: true,
-    hmr: true,
+    headers: {
+      // Tell Cloudflare (and any CDN proxy) not to transform JS/CSS.
+      // This prevents Rocket Loader and Auto-Minify from breaking React.
+      'Cache-Control': 'no-store, no-transform',
+    },
+    hmr: {
+      // When accessed via a Cloudflare tunnel the browser connects on 443,
+      // but the Vite process listens on 5173.  clientPort bridges that gap.
+      clientPort: 443,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8001',
