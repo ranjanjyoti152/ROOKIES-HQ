@@ -4,18 +4,18 @@ import useUIStore from '../../store/uiStore';
 import {
   LayoutDashboard, Swords, Kanban, FolderOpen, Target, Zap, Users, Trophy,
   ClipboardList, Clock, Briefcase, Palette, StickyNote, Bell, ChevronLeft,
-  ChevronRight, LogOut, Flame, Crown, Sparkles,
+  ChevronRight, LogOut, Flame, Bot, SlidersHorizontal, Building2,
 } from 'lucide-react';
 
 const iconMap = {
   LayoutDashboard, Swords, Kanban, FolderOpen, Target, Zap, Users, Trophy,
-  ClipboardList, Clock, Briefcase, Palette, StickyNote, Bell,
+  ClipboardList, Clock, Briefcase, Palette, StickyNote, Bell, Bot, SlidersHorizontal, Building2,
 };
 
 function groupItems(items) {
   const sections = { GENERAL: [], PERFORMANCE: [], TOOLS: [] };
   const perf = ['leaderboard', 'my_work', 'time_report'];
-  const tools = ['canvas', 'notes', 'work_dashboard'];
+  const tools = ['canvas', 'notes', 'work_dashboard', 'ai_assistant', 'settings'];
   for (const item of items) {
     if (perf.includes(item.key)) sections.PERFORMANCE.push(item);
     else if (tools.includes(item.key)) sections.TOOLS.push(item);
@@ -24,71 +24,80 @@ function groupItems(items) {
   return sections;
 }
 
+function SectionLabel({ children, sidebarCollapsed }) {
+  if (sidebarCollapsed) {
+    return <div style={{ borderTop: '1px solid rgba(88,66,55,0.2)', margin: '10px 14px' }} />;
+  }
+
+  return (
+    <div style={{
+      fontSize: '9px',
+      fontWeight: 700,
+      letterSpacing: '0.14em',
+      color: 'rgba(88,66,55,0.6)',
+      textTransform: 'uppercase',
+      padding: '20px 18px 6px 18px',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function NavItem({ item, sidebarCollapsed, pathname }) {
+  const Icon = iconMap[item.icon] || LayoutDashboard;
+  const active = pathname === item.path;
+
+  return (
+    <NavLink
+      to={item.path}
+      style={{
+        display: 'flex', alignItems: 'center',
+        gap: sidebarCollapsed ? 0 : '10px',
+        padding: sidebarCollapsed ? '9px 0' : '8px 16px 8px 18px',
+        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+        fontSize: '13px', fontWeight: active ? 600 : 500,
+        textDecoration: 'none', position: 'relative',
+        color: active ? '#ffb690' : 'rgba(167,139,125,0.7)',
+        background: active ? 'rgba(249,115,22,0.08)' : 'transparent',
+        transition: 'all 150ms cubic-bezier(0.4,0,0.2,1)',
+        marginBottom: '2px',
+      }}
+    >
+      {/* Left orange border for active */}
+      {active && (
+        <div style={{
+          position: 'absolute', left: 0, top: '4px', bottom: '4px',
+          width: '3px', background: 'linear-gradient(180deg, #ffb690, #f97316)',
+          borderRadius: '0 3px 3px 0',
+        }} />
+      )}
+      <Icon
+        size={15}
+        style={{
+          flexShrink: 0,
+          color: active ? '#f97316' : 'rgba(167,139,125,0.5)',
+          filter: active ? 'drop-shadow(0 0 4px rgba(249,115,22,0.4))' : 'none',
+          transition: 'color 150ms',
+        }}
+      />
+      {!sidebarCollapsed && (
+        <span style={{
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          transition: 'color 150ms',
+        }}>
+          {item.label}
+        </span>
+      )}
+    </NavLink>
+  );
+}
+
 export default function Sidebar() {
-  const { sidebarItems, user, organization, logout } = useAuthStore();
+  const { sidebarItems, organization, logout } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const location = useLocation();
   const sections = groupItems(sidebarItems);
   const w = sidebarCollapsed ? 58 : 210;
-
-  const SectionLabel = ({ children }) =>
-    !sidebarCollapsed ? (
-      <div style={{
-        fontSize: '9px', fontWeight: 700, letterSpacing: '0.14em',
-        color: 'rgba(88,66,55,0.6)', textTransform: 'uppercase',
-        padding: '20px 18px 6px 18px',
-      }}>
-        {children}
-      </div>
-    ) : <div style={{ borderTop: '1px solid rgba(88,66,55,0.2)', margin: '10px 14px' }} />;
-
-  const NavItem = ({ item }) => {
-    const Icon = iconMap[item.icon] || LayoutDashboard;
-    const active = location.pathname === item.path;
-    return (
-      <NavLink
-        to={item.path}
-        style={{
-          display: 'flex', alignItems: 'center',
-          gap: sidebarCollapsed ? 0 : '10px',
-          padding: sidebarCollapsed ? '9px 0' : '8px 16px 8px 18px',
-          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-          fontSize: '13px', fontWeight: active ? 600 : 500,
-          textDecoration: 'none', position: 'relative',
-          color: active ? '#ffb690' : 'rgba(167,139,125,0.7)',
-          background: active ? 'rgba(249,115,22,0.08)' : 'transparent',
-          transition: 'all 150ms cubic-bezier(0.4,0,0.2,1)',
-          marginBottom: '2px',
-        }}
-      >
-        {/* Left orange border for active */}
-        {active && (
-          <div style={{
-            position: 'absolute', left: 0, top: '4px', bottom: '4px',
-            width: '3px', background: 'linear-gradient(180deg, #ffb690, #f97316)',
-            borderRadius: '0 3px 3px 0',
-          }} />
-        )}
-        <Icon
-          size={15}
-          style={{
-            flexShrink: 0,
-            color: active ? '#f97316' : 'rgba(167,139,125,0.5)',
-            filter: active ? 'drop-shadow(0 0 4px rgba(249,115,22,0.4))' : 'none',
-            transition: 'color 150ms',
-          }}
-        />
-        {!sidebarCollapsed && (
-          <span style={{
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            transition: 'color 150ms',
-          }}>
-            {item.label}
-          </span>
-        )}
-      </NavLink>
-    );
-  };
 
   return (
     <aside style={{
@@ -138,20 +147,20 @@ export default function Sidebar() {
       <nav style={{ flex: 1, overflowY: 'auto', paddingTop: '6px', paddingBottom: '4px' }}>
         {sections.GENERAL.length > 0 && (
           <>
-            <SectionLabel>General</SectionLabel>
-            {sections.GENERAL.map(item => <NavItem key={item.key} item={item} />)}
+            <SectionLabel sidebarCollapsed={sidebarCollapsed}>General</SectionLabel>
+            {sections.GENERAL.map(item => <NavItem key={item.key} item={item} sidebarCollapsed={sidebarCollapsed} pathname={location.pathname} />)}
           </>
         )}
         {sections.PERFORMANCE.length > 0 && (
           <>
-            <SectionLabel>Performance</SectionLabel>
-            {sections.PERFORMANCE.map(item => <NavItem key={item.key} item={item} />)}
+            <SectionLabel sidebarCollapsed={sidebarCollapsed}>Performance</SectionLabel>
+            {sections.PERFORMANCE.map(item => <NavItem key={item.key} item={item} sidebarCollapsed={sidebarCollapsed} pathname={location.pathname} />)}
           </>
         )}
         {sections.TOOLS.length > 0 && (
           <>
-            <SectionLabel>Tools</SectionLabel>
-            {sections.TOOLS.map(item => <NavItem key={item.key} item={item} />)}
+            <SectionLabel sidebarCollapsed={sidebarCollapsed}>Tools</SectionLabel>
+            {sections.TOOLS.map(item => <NavItem key={item.key} item={item} sidebarCollapsed={sidebarCollapsed} pathname={location.pathname} />)}
           </>
         )}
       </nav>

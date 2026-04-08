@@ -43,5 +43,16 @@ class Task(Base):
         "closed": [],
     }
 
+    PRIVATE_TRANSITIONS = {
+        "unassigned": ["claimed"],
+        "claimed": ["editing", "closed"],
+        "editing": ["internal_review", "closed"],
+        "internal_review": ["revision", "delivered", "closed"],
+        "revision": ["editing", "closed"],
+        "delivered": ["revision", "closed"],
+        "closed": ["claimed"],
+    }
+
     def can_transition_to(self, target_status: str) -> bool:
-        return target_status in self.VALID_TRANSITIONS.get(self.status, [])
+        transitions = self.PRIVATE_TRANSITIONS if self.is_private else self.VALID_TRANSITIONS
+        return target_status in transitions.get(self.status, [])

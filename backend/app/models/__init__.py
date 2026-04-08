@@ -13,6 +13,10 @@ from app.models.leaderboard import LeaderboardEntry
 from app.models.note import Note
 from app.models.canvas_board import CanvasBoard
 from app.models.project_members import ProjectMember
+from app.models.ai_provider_setting import AIProviderSetting
+from app.models.ai_chat import AIChat
+from app.models.ai_message import AIMessage
+from app.models.ai_memory import AIMemory
 
 __all__ = [
     "Organization",
@@ -32,4 +36,8 @@ __all__ = [
     "Note",
     "CanvasBoard",
     "ProjectMember",
+    "AIProviderSetting",
+    "AIChat",
+    "AIMessage",
+    "AIMemory",
 ]

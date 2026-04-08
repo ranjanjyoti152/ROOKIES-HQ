@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { Plus, Radio, UserX, UserCheck, Crown, X } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import useToastStore from '../store/toastStore';
 
 const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px' };
 const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', marginBottom: '8px' };
@@ -13,12 +14,39 @@ const ROLES = ['admin','manager','editor','client','hr','marketing'];
 
 export default function Team() {
   const { user: currentUser } = useAuthStore();
+  const { pushToast } = useToastStore();
   const [users, setUsers] = useState([]);
+  const [error, setError] = useState('');
   const [showInvite, setShowInvite] = useState(false);
   const [form, setForm] = useState({ email: '', full_name: '', password: '', role: 'editor' });
 
-  const fetchUsers = async () => { try { const r = await api.get('/users'); setUsers(r.data); } catch {} };
-  useEffect(() => { fetchUsers(); }, []);
+  const fetchUsers = async () => {
+    try {
+      const r = await api.get('/users');
+      setUsers(r.data);
+      setError('');
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Unable to load team members.');
+    }
+  };
+  useEffect(() => {
+    let cancelled = false;
+    const loadUsers = async () => {
+      try {
+        const r = await api.get('/users');
+        if (!cancelled) {
+          setUsers(r.data);
+          setError('');
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e.response?.data?.detail || 'Unable to load team members.');
+        }
+      }
+    };
+    void loadUsers();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -26,22 +54,47 @@ export default function Team() {
       await api.post('/users/invite', form);
       setShowInvite(false);
       setForm({ email: '', full_name: '', password: '', role: 'editor' });
-      fetchUsers();
-    } catch (e) { alert(e.response?.data?.detail || 'Failed to invite user'); }
+      await fetchUsers();
+      pushToast({ type: 'success', title: 'User invited', message: `${form.full_name} has been added.` });
+    } catch (e) {
+      const message = e.response?.data?.detail || 'Failed to invite user';
+      setError(message);
+      pushToast({ type: 'error', title: 'Invite failed', message });
+    }
   };
 
   const handleRole = async (id, role) => {
-    try { await api.put(`/users/${id}/role`, { role }); fetchUsers(); }
-    catch (e) { alert(e.response?.data?.detail || 'Failed to update role'); }
+    try {
+      await api.put(`/users/${id}/role`, { role });
+      await fetchUsers();
+      pushToast({ type: 'success', title: 'Role updated', message: `Role changed to ${role}.` });
+    } catch (e) {
+      const message = e.response?.data?.detail || 'Failed to update role';
+      setError(message);
+      pushToast({ type: 'error', title: 'Role update failed', message });
+    }
   };
 
   const toggleActive = async (id, activate) => {
-    try { await api.post(`/users/${id}/${activate ? 'activate' : 'deactivate'}`); fetchUsers(); }
-    catch (e) { alert(e.response?.data?.detail || 'Failed'); }
+    try {
+      await api.post(`/users/${id}/${activate ? 'activate' : 'deactivate'}`);
+      await fetchUsers();
+      pushToast({ type: 'success', title: activate ? 'User activated' : 'User deactivated', message: 'Status updated successfully.' });
+    } catch (e) {
+      const message = e.response?.data?.detail || 'Failed to update user status';
+      setError(message);
+      pushToast({ type: 'error', title: 'Status update failed', message });
+    }
   };
 
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+      {error && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: '#f87171' }}>
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Team</h1>

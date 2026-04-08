@@ -58,7 +58,7 @@ function FieldInput({ label, type = 'text', value, onChange, placeholder, hint, 
 // signupMode: 'create' (first user → admin) | 'join' (subsequent → editor)
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const { login, fetchMe } = useAuthStore();
 
   const [step, setStep] = useState('loading');
   const [signupMode, setSignupMode] = useState('join'); // will be set by setup-status
@@ -174,6 +174,7 @@ export default function Login() {
       }
       localStorage.setItem('access_token', res.data.access_token);
       localStorage.setItem('refresh_token', res.data.refresh_token);
+      await fetchMe();
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid or expired OTP');

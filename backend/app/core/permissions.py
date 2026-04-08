@@ -20,6 +20,7 @@ ROLE_PERMISSIONS = {
     "canvas":          ["admin", "manager", "editor"],
     "notes":           ["admin", "manager", "editor"],
     "notifications":   ["admin", "manager", "editor", "client", "hr", "marketing"],
+    "ai_assistant":    ["admin", "manager", "editor", "client", "hr", "marketing"],
     "user_management": ["admin"],
 }
 
@@ -62,11 +63,13 @@ def get_sidebar_items(user) -> List[dict]:
         {"key": "work_dashboard",  "label": "Work Dashboard",  "icon": "Briefcase",        "path": "/work-dashboard"},
         {"key": "canvas",          "label": "Canvas",          "icon": "Palette",          "path": "/canvas"},
         {"key": "notes",           "label": "Notes",           "icon": "StickyNote",       "path": "/notes"},
+        {"key": "ai_assistant",    "label": "AI Assistant",    "icon": "Bot",              "path": "/ai-assistant"},
         {"key": "notifications",   "label": "Notifications",   "icon": "Bell",             "path": "/notifications"},
     ]
     
     # Add Workspaces for superadmins
     if getattr(user, "is_superadmin", False):
         all_items.append({"key": "workspaces", "label": "Workspaces", "icon": "Building2", "path": "/workspaces"})
+        all_items.append({"key": "settings", "label": "Settings", "icon": "SlidersHorizontal", "path": "/settings"})
         
-    return [item for item in all_items if item["key"] == "workspaces" or check_permission(user.role, item["key"])]
+    return [item for item in all_items if item["key"] in {"workspaces", "settings"} or check_permission(user.role, item["key"])]

@@ -56,10 +56,18 @@ async def create_project(
         description=data.description,
         status=data.status,
     )
+    db.add(project)
+    await db.flush()
+
     if data.member_ids:
-        members_query = await db.execute(select(User).where(User.id.in_(data.member_ids)))
+        members_query = await db.execute(
+            select(User).where(
+                User.id.in_(data.member_ids),
+                User.org_id == current_user.org_id,
+            )
+        )
         for member in members_query.scalars().all():
-            project.memberships.append(ProjectMember(user_id=member.id, status="pending"))
+            db.add(ProjectMember(project_id=project.id, user_id=member.id, status="pending"))
             db.add(Notification(
                 org_id=project.org_id,
                 user_id=member.id,
@@ -71,8 +79,6 @@ async def create_project(
             ))
             background_tasks.add_task(send_project_assigned_email, member.email, project.name, member.full_name)
 
-    db.add(project)
-    await db.flush()
     # Need to load assigned_members explicitly to return them 
     await db.refresh(project, ["assigned_members"])
     return project
@@ -112,21 +118,29 @@ async def update_project(
 
     update_data = data.model_dump(exclude_unset=True)
     if "member_ids" in update_data:
-        existing_memberships = {str(m.user_id): m for m in project.memberships} if project.memberships else {}
+        existing_memberships_result = await db.execute(
+            select(ProjectMember).where(ProjectMember.project_id == project.id)
+        )
+        existing_memberships = {str(m.user_id): m for m in existing_memberships_result.scalars().all()}
         member_ids = update_data.pop("member_ids")
-        members_query = await db.execute(select(User).where(User.id.in_(member_ids)))
+        members_query = await db.execute(
+            select(User).where(
+                User.id.in_(member_ids),
+                User.org_id == current_user.org_id,
+            )
+        )
         new_users = members_query.scalars().all()
         new_user_ids = {str(u.id) for u in new_users}
 
         # Remove old memberships
-        for user_id_str, membership in list(existing_memberships.items()):
+        for user_id_str, membership in existing_memberships.items():
             if user_id_str not in new_user_ids:
-                project.memberships.remove(membership)
+                await db.delete(membership)
 
         # Add new memberships
         for member in new_users:
             if str(member.id) not in existing_memberships:
-                project.memberships.append(ProjectMember(user_id=member.id, status="pending"))
+                db.add(ProjectMember(project_id=project.id, user_id=member.id, status="pending"))
                 db.add(Notification(
                     org_id=project.org_id,
                     user_id=member.id,
@@ -285,4 +299,3 @@ async def reject_project(
     
     await db.flush()
     return {"message": "Project rejected"}
-

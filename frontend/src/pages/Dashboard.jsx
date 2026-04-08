@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api/client';
 import useAuthStore from '../store/authStore';
 import {
-  CheckSquare, Clock, AlertTriangle, TrendingUp,
+  CheckSquare, AlertTriangle, TrendingUp,
   FolderOpen, Users, Eye, Zap, Flame,
 } from 'lucide-react';
 
@@ -35,9 +35,10 @@ const LEAD_LABELS = {
 };
 
 // ─── Stat Card ───────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, sub, accent }) {
+function StatCard({ icon, label, value, sub, accent }) {
   const [hover, setHover] = useState(false);
   const ac = accent || '#f97316';
+  const IconComponent = icon;
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -59,7 +60,7 @@ function StatCard({ icon: Icon, label, value, sub, accent }) {
           background: `${ac}1a`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Icon size={15} color={ac} strokeWidth={2.2} />
+          <IconComponent size={15} color={ac} strokeWidth={2.2} />
         </div>
         {sub !== undefined && (
           <span style={{

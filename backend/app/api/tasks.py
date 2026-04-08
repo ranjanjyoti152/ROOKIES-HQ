@@ -281,9 +281,10 @@ async def transition_task(
     # Role-based transition checks
     role = current_user.role
     target = data.target_status
+    is_private_owner = task.is_private and task.assigned_user_id == current_user.id
 
     # Admin can do anything
-    if role != "admin":
+    if role != "admin" and not is_private_owner:
         if target == "editing" and task.assigned_user_id != current_user.id:
             raise ForbiddenException("Only the assigned editor can start editing")
         if target == "internal_review" and task.assigned_user_id != current_user.id:

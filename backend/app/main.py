@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import settings
 from app.core.exceptions import global_exception_handler
-from app.api import auth, users, projects, tasks, comments, time_entries, notifications, leads, automations, leaderboard, websocket, analytics, notes, canvas, workspaces
+from app.api import auth, users, projects, tasks, comments, time_entries, notifications, leads, automations, leaderboard, websocket, analytics, notes, canvas, workspaces, ai
 
 
 import asyncio
@@ -61,6 +61,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(notes.router, prefix="/api")
 app.include_router(canvas.router, prefix="/api")
 app.include_router(workspaces.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 
 @app.get("/api/health")

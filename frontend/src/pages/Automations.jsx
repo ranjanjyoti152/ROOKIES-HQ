@@ -8,18 +8,59 @@ const inputStyle = { width: '100%', padding: '12px 16px', background: '#2f2926',
 
 export default function Automations() {
   const [rules, setRules] = useState([]);
+  const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', trigger_type: 'task_status_change', action_type: 'send_notification' });
 
-  const fetch = () => api.get('/automations').then(r => setRules(r.data)).catch(() => {});
+  const fetch = () => api.get('/automations')
+    .then((r) => {
+      setRules(r.data);
+      setError('');
+    })
+    .catch((err) => {
+      setError(err.response?.data?.detail || 'Unable to load automation rules.');
+    });
   useEffect(() => { fetch(); }, []);
 
-  const handleCreate = async (e) => { e.preventDefault(); try { await api.post('/automations', form); setShowCreate(false); setForm({ name: '', trigger_type: 'task_status_change', action_type: 'send_notification' }); fetch(); } catch {} };
-  const toggle = async (id) => { try { await api.post(`/automations/${id}/toggle`); fetch(); } catch {} };
-  const del = async (id) => { try { await api.delete(`/automations/${id}`); setRules(p => p.filter(r => r.id !== id)); } catch {} };
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/automations', form);
+      setShowCreate(false);
+      setForm({ name: '', trigger_type: 'task_status_change', action_type: 'send_notification' });
+      fetch();
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create automation rule.');
+    }
+  };
+  const toggle = async (id) => {
+    try {
+      await api.post(`/automations/${id}/toggle`);
+      fetch();
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update automation state.');
+    }
+  };
+  const del = async (id) => {
+    try {
+      await api.delete(`/automations/${id}`);
+      setRules(p => p.filter(r => r.id !== id));
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to delete automation rule.');
+    }
+  };
 
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+      {error && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: '#f87171' }}>
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>

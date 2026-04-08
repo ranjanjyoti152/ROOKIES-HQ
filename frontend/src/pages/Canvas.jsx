@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Palette, Plus, Trash2, Move, Type, StickyNote, Square, Minus, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
+import { Palette, Trash2, Move, Type, StickyNote, Square, Minus, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 const STORAGE_KEY = 'rookishq_canvas';
 

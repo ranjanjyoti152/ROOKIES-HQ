@@ -16,6 +16,7 @@ const statusBadge = {
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [view, setView] = useState('grid');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -23,7 +24,17 @@ export default function Projects() {
   const [users, setUsers] = useState([]);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchProjects = async () => { try { const r = await api.get('/projects'); setProjects(r.data); } catch {} finally { setLoading(false); } };
+  const fetchProjects = async () => {
+    try {
+      const r = await api.get('/projects');
+      setProjects(r.data);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Unable to load projects.');
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => { 
     fetchProjects(); 
     api.get('/users').then(res => setUsers(res.data)).catch(() => {});
@@ -40,8 +51,11 @@ export default function Projects() {
       }
       setShowCreate(false); 
       setForm({ name: '', client_name: '', description: '', status: 'active', member_ids: [] }); 
-      fetchProjects(); 
-    } catch {}
+      await fetchProjects();
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save project.');
+    }
   };
 
   const handleDelete = async (projectId) => {
@@ -51,8 +65,13 @@ export default function Projects() {
       await api.delete(`/projects/${projectId}`);
       setShowCreate(false);
       setForm({ name: '', client_name: '', description: '', status: 'active', member_ids: [] });
-      fetchProjects();
-    } catch {} finally { setDeleting(false); }
+      await fetchProjects();
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to archive project.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openEdit = (p) => {
@@ -71,6 +90,17 @@ export default function Projects() {
 
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+      {loading && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: 'rgba(167,139,125,0.7)' }}>
+          Loading projects...
+        </div>
+      )}
+      {error && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: '#f87171' }}>
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Projects</h1>

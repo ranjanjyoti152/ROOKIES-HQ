@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api/client';
 import { Plus, ArrowRight, Building2, Mail, Phone, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import useToastStore from '../store/toastStore';
 
 const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(88,66,55,0.2)', borderRadius: '10px' };
 const label = { display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(167,139,125,0.5)', textTransform: 'uppercase', marginBottom: '8px' };
@@ -16,27 +17,66 @@ const STAGES = [
 ];
 
 export default function Leads() {
+  const { pushToast } = useToastStore();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', source: '', value: '' });
 
-  const fetchLeads = async () => { try { const r = await api.get('/leads'); setLeads(r.data); } catch {} finally { setLoading(false); } };
+  const fetchLeads = async () => {
+    try {
+      const r = await api.get('/leads');
+      setLeads(r.data);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Unable to load leads.');
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => { fetchLeads(); }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    try { await api.post('/leads', { ...form, value: form.value ? parseFloat(form.value) : null }); setShowCreate(false); setForm({ name: '', email: '', phone: '', company: '', source: '', value: '' }); fetchLeads(); } catch {}
+    try {
+      await api.post('/leads', { ...form, value: form.value ? parseFloat(form.value) : null });
+      setShowCreate(false);
+      setForm({ name: '', email: '', phone: '', company: '', source: '', value: '' });
+      await fetchLeads();
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create lead.');
+    }
   };
-  const handleTransition = async (id, target) => { try { await api.post(`/leads/${id}/transition`, { target_status: target }); fetchLeads(); } catch (e) { alert(e.response?.data?.detail || 'Failed'); } };
-  const handleConvert = async (id) => { try { await api.post(`/leads/${id}/convert`); fetchLeads(); } catch (e) { alert(e.response?.data?.detail || 'Failed'); } };
+  const handleTransition = async (id, target) => {
+    try {
+      await api.post(`/leads/${id}/transition`, { target_status: target });
+      await fetchLeads();
+      pushToast({ type: 'success', title: 'Lead updated', message: `Moved to ${target.replace('_', ' ')}.` });
+    } catch (e) {
+      const message = e.response?.data?.detail || 'Failed to move lead';
+      setError(message);
+      pushToast({ type: 'error', title: 'Lead transition failed', message });
+    }
+  };
+  const handleConvert = async (id) => {
+    try {
+      await api.post(`/leads/${id}/convert`);
+      await fetchLeads();
+      pushToast({ type: 'success', title: 'Lead converted', message: 'Project and initial task were created.' });
+    } catch (e) {
+      const message = e.response?.data?.detail || 'Failed to convert lead';
+      setError(message);
+      pushToast({ type: 'error', title: 'Conversion failed', message });
+    }
+  };
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
     const { source, destination, draggableId } = result;
 
     if (source.droppableId !== destination.droppableId) {
-      const sourceKey = source.droppableId;
       const destKey = destination.droppableId;
 
       // Optimistically update the UI
@@ -47,7 +87,9 @@ export default function Leads() {
         // Optionally fetch leads again to ensure exact consistency is maintained.
         fetchLeads();
       } catch (e) {
-        alert(e.response?.data?.detail || 'Invalid transition');
+        const message = e.response?.data?.detail || 'Invalid transition';
+        setError(message);
+        pushToast({ type: 'error', title: 'Drag transition rejected', message });
         // Revert on error
         fetchLeads();
       }
@@ -58,6 +100,17 @@ export default function Leads() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeIn 0.25s ease-out' }}>
+      {loading && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: 'rgba(167,139,125,0.7)' }}>
+          Loading leads...
+        </div>
+      )}
+      {error && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: '#f87171' }}>
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Leads Pipeline</h1>

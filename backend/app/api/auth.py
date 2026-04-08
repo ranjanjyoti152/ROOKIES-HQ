@@ -18,6 +18,14 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def ensure_workspace_active(org: Organization | None, user: User | None = None):
+    if org and org.is_paused and not (user and user.is_superadmin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This workspace is currently paused. Contact the superadmin.",
+        )
+
+
 @router.get("/setup-status")
 async def setup_status(db: AsyncSession = Depends(get_db)):
     """
@@ -147,6 +155,10 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
 
+    org_result = await db.execute(select(Organization).where(Organization.id == user.org_id))
+    org = org_result.scalar_one_or_none()
+    ensure_workspace_active(org, user)
+
     access_token = create_access_token({"sub": str(user.id), "org_id": str(user.org_id), "role": user.role})
     refresh_token = create_refresh_token({"sub": str(user.id), "org_id": str(user.org_id)})
 
@@ -166,6 +178,10 @@ async def refresh_token(data: RefreshRequest, db: AsyncSession = Depends(get_db)
 
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+
+    org_result = await db.execute(select(Organization).where(Organization.id == user.org_id))
+    org = org_result.scalar_one_or_none()
+    ensure_workspace_active(org, user)
 
     access_token = create_access_token({"sub": str(user.id), "org_id": str(user.org_id), "role": user.role})
     new_refresh_token = create_refresh_token({"sub": str(user.id), "org_id": str(user.org_id)})
@@ -188,6 +204,7 @@ async def join_initiate(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workspace not found. Check your workspace ID."
         )
+    ensure_workspace_active(org)
 
     # Check email not already in this org
     existing = await db.execute(
@@ -232,6 +249,7 @@ async def join_verify(
     org = result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=404, detail="Workspace no longer exists")
+    ensure_workspace_active(org)
 
     # Check email not already registered
     existing = await db.execute(select(User).where(User.org_id == org.id, User.email == reg["email"]))

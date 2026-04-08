@@ -8,13 +8,14 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://rookishq:rookishq_secret@localhost:5432/rookishq"
 
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://localhost:6380/0"
 
     # JWT
     JWT_SECRET: str = "change-me-in-production-use-a-long-random-string"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    AI_ENCRYPTION_KEY: str = ""
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173"

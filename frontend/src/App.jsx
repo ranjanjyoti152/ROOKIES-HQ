@@ -19,6 +19,9 @@ import WorkDashboard from './pages/WorkDashboard';
 import Canvas from './pages/Canvas';
 import Notes from './pages/Notes';
 import Workspaces from './pages/Workspaces';
+import Settings from './pages/Settings';
+import AIAssistant from './pages/AIAssistant';
+import ToastViewport from './components/ui/ToastViewport';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30000, retry: 1 } },
@@ -60,6 +63,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ToastViewport />
         <Routes>
           {/* Public */}
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -81,6 +85,8 @@ export default function App() {
             <Route path="/notes" element={<Notes />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/workspaces" element={<Workspaces />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
           </Route>
 
           {/* Fallback */}

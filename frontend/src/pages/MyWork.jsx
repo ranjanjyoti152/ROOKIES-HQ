@@ -18,8 +18,20 @@ const badgeColors = {
 
 const priorityDot = { urgent: '#ef4444', high: '#f97316', medium: '#f97316', low: 'rgba(88,66,55,0.6)' };
 
+function assetNumberFromId(id) {
+  const raw = String(id || '');
+  const chars = raw.replace(/-/g, '');
+  let hash = 0;
+  for (let i = 0; i < chars.length; i += 1) {
+    hash = ((hash << 5) - hash) + chars.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash % 9000) + 1000;
+}
+
 export default function MyWork() {
   const [tasks, setTasks] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
   useEffect(() => { api.get('/tasks/my-work').then(r => setTasks(r.data)).catch(() => {}); }, []);
 
   return (
@@ -56,7 +68,7 @@ export default function MyWork() {
                     <td style={td}>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: '#ece0dc' }}>{t.title}</div>
                       <div style={{ fontSize: '11px', color: 'rgba(88,66,55,0.6)', marginTop: '2px' }}>
-                        Asset #{Math.floor(Math.random() * 9000 + 1000)}
+                        Asset #{assetNumberFromId(t.id)}
                       </div>
                     </td>
                     <td style={td}>
@@ -78,7 +90,9 @@ export default function MyWork() {
                       </div>
                     </td>
                     <td style={{ ...td, textAlign: 'right' }}>
-                      <button style={{
+                      <button
+                        onClick={() => setSelectedTask(t)}
+                        style={{
                         padding: '6px', borderRadius: '6px', background: 'none', border: 'none',
                         color: 'rgba(88,66,55,0.6)', cursor: 'pointer', transition: 'color 150ms'
                       }}
@@ -94,6 +108,58 @@ export default function MyWork() {
           </table>
         )}
       </div>
+
+      {selectedTask && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.65)',
+            display: 'grid',
+            placeItems: 'center',
+            zIndex: 1200,
+            padding: 16,
+          }}
+          onClick={() => setSelectedTask(null)}
+        >
+          <div style={{ ...card, width: 'min(640px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, color: '#ece0dc' }}>{selectedTask.title}</h3>
+            <div style={{ fontSize: 12, color: 'rgba(167,139,125,0.68)', marginBottom: 12 }}>
+              Status: <strong style={{ color: '#f5e8e1' }}>{selectedTask.status.replace('_', ' ')}</strong> • Priority: <strong style={{ color: '#f5e8e1' }}>{selectedTask.priority}</strong>
+            </div>
+            <div style={{ fontSize: 13, color: '#e0c0b1', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+              {selectedTask.description || 'No description provided for this task.'}
+            </div>
+            {selectedTask.attachment_link && (
+              <a
+                href={selectedTask.attachment_link}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  marginTop: 14,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: '#ffb690',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Open attachment
+              </a>
+            )}
+            <div style={{ marginTop: 16, textAlign: 'right' }}>
+              <button
+                onClick={() => setSelectedTask(null)}
+                style={{ border: 'none', borderRadius: 8, background: '#f97316', color: '#fff', padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
     </div>

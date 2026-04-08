@@ -5,6 +5,7 @@ from sqlalchemy import select
 from app.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
+from app.models.organization import Organization
 
 security_scheme = HTTPBearer()
 
@@ -44,6 +45,16 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
+        )
+
+    org_result = await db.execute(
+        select(Organization.is_paused).where(Organization.id == user.org_id)
+    )
+    org_is_paused = org_result.scalar_one_or_none()
+    if org_is_paused and not user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Workspace is paused. Contact the superadmin.",
         )
 
     return user

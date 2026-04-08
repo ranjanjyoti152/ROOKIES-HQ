@@ -6,12 +6,36 @@ const card = { background: 'rgba(32, 26, 24, 0.55)', backdropFilter: 'blur(16px)
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
+  const [error, setError] = useState('');
   
-  const fetchNotifs = () => api.get('/notifications').then(r => setNotifications(r.data)).catch(() => {});
+  const fetchNotifs = () => api.get('/notifications')
+    .then((r) => {
+      setNotifications(r.data);
+      setError('');
+    })
+    .catch((err) => {
+      setError(err.response?.data?.detail || 'Unable to load notifications.');
+    });
   useEffect(() => { fetchNotifs(); }, []);
 
-  const markRead = async (id) => { try { await api.post(`/notifications/${id}/read`); setNotifications(p => p.map(n => n.id===id?{...n,is_read:true}:n)); } catch {} };
-  const markAllRead = async () => { try { await api.post('/notifications/read-all'); setNotifications(p => p.map(n => ({...n,is_read:true}))); } catch {} };
+  const markRead = async (id) => {
+    try {
+      await api.post(`/notifications/${id}/read`);
+      setNotifications(p => p.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to mark notification as read.');
+    }
+  };
+  const markAllRead = async () => {
+    try {
+      await api.post('/notifications/read-all');
+      setNotifications(p => p.map(n => ({ ...n, is_read: true })));
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to mark notifications as read.');
+    }
+  };
 
   const handleAssignAction = async (notifId, projectId, action) => {
     try {
@@ -24,6 +48,12 @@ export default function Notifications() {
 
   return (
     <div style={{ animation: 'fadeIn 0.25s ease-out', maxWidth: '672px' }}>
+      {error && (
+        <div style={{ ...card, padding: '12px 14px', marginBottom: '12px', fontSize: '12px', color: '#f87171' }}>
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Notifications</h1>

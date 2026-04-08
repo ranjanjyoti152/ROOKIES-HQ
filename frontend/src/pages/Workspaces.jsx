@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Shield, Search, Loader2, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, Plus, Shield, Search, Loader2, ArrowRight, PauseCircle, PlayCircle, Trash2 } from 'lucide-react';
 import api from '../api/client';
 import useAuthStore from '../store/authStore';
 
@@ -8,6 +8,8 @@ export default function Workspaces() {
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [workspaceQuery, setWorkspaceQuery] = useState('');
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,6 +20,8 @@ export default function Workspaces() {
     owner_password: '',
   });
   const [creating, setCreating] = useState(false);
+  const [modalError, setModalError] = useState(null);
+  const [actionWorkspaceId, setActionWorkspaceId] = useState(null);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -38,18 +42,67 @@ export default function Workspaces() {
   const handleCreate = async (e) => {
     e.preventDefault();
     setCreating(true);
-    setError(null);
+    setModalError(null);
     try {
       const res = await api.post('/workspaces', modalForm);
-      setWorkspaces([res.data, ...workspaces]);
+      setWorkspaces((prev) => [res.data, ...prev]);
       setIsModalOpen(false);
       setModalForm({ org_name: '', owner_email: '', owner_full_name: '', owner_password: '' });
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create workspace');
+      setModalError(err.response?.data?.detail || 'Failed to create workspace');
     } finally {
       setCreating(false);
     }
   };
+
+  const upsertWorkspace = (nextWorkspace) => {
+    setWorkspaces((prev) => prev.map((ws) => (ws.id === nextWorkspace.id ? nextWorkspace : ws)));
+    setSelectedWorkspace((prev) => (prev?.id === nextWorkspace.id ? nextWorkspace : prev));
+  };
+
+  const handlePauseToggle = async (workspace) => {
+    setError(null);
+    setActionWorkspaceId(workspace.id);
+    try {
+      const res = await api.patch(`/workspaces/${workspace.id}/pause`, { is_paused: !workspace.is_paused });
+      upsertWorkspace(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update workspace status.');
+    } finally {
+      setActionWorkspaceId(null);
+    }
+  };
+
+  const handleDeleteWorkspace = async (workspace) => {
+    const confirmed = window.confirm(
+      `Delete workspace "${workspace.name}"?\n\nThis action is permanent and removes all workspace data.`
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setActionWorkspaceId(workspace.id);
+    try {
+      await api.delete(`/workspaces/${workspace.id}`);
+      setWorkspaces((prev) => prev.filter((ws) => ws.id !== workspace.id));
+      setSelectedWorkspace((prev) => (prev?.id === workspace.id ? null : prev));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to delete workspace.');
+    } finally {
+      setActionWorkspaceId(null);
+    }
+  };
+
+  const filteredWorkspaces = workspaces.filter((ws) => {
+    const q = workspaceQuery.trim().toLowerCase();
+    if (!q) return true;
+
+    return (
+      ws.name.toLowerCase().includes(q) ||
+      ws.slug.toLowerCase().includes(q) ||
+      ws.owner_name.toLowerCase().includes(q) ||
+      ws.owner_email.toLowerCase().includes(q)
+    );
+  });
 
   if (!user?.is_superadmin) {
     return (
@@ -73,11 +126,17 @@ export default function Workspaces() {
             Provision and manage all agency workspaces across the platform.
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+        <button className="btn-primary" onClick={() => { setModalError(null); setIsModalOpen(true); }}>
           <Plus size={16} />
           Create Workspace
         </button>
       </div>
+
+      {error && (
+        <div style={{ marginBottom: 14, padding: '12px 14px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.09)', color: '#f87171', fontSize: 13 }}>
+          {error}
+        </div>
+      )}
 
       {/* Main Card */}
       <div className="card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -89,6 +148,8 @@ export default function Workspaces() {
               type="text" 
               placeholder="Search workspaces..." 
               className="input"
+              value={workspaceQuery}
+              onChange={(e) => setWorkspaceQuery(e.target.value)}
               style={{ paddingLeft: '36px' }}
             />
           </div>
@@ -107,6 +168,7 @@ export default function Workspaces() {
                 <tr>
                   <th className="table-header">Workspace</th>
                   <th className="table-header">Workspace ID (Slug)</th>
+                  <th className="table-header">Status</th>
                   <th className="table-header">Owner</th>
                   <th className="table-header">Users</th>
                   <th className="table-header">Created At</th>
@@ -114,7 +176,7 @@ export default function Workspaces() {
                 </tr>
               </thead>
               <tbody>
-                {workspaces.map((ws) => (
+                {filteredWorkspaces.map((ws) => (
                   <tr key={ws.id} className="table-row">
                     <td className="table-cell">
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ws.name}</div>
@@ -123,6 +185,11 @@ export default function Workspaces() {
                       <div style={{ display: 'inline-block', padding: '4px 8px', background: 'var(--accent-muted)', color: 'var(--accent)', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 600 }}>
                         {ws.slug}
                       </div>
+                    </td>
+                    <td className="table-cell">
+                      <span className={`badge ${ws.is_paused ? 'badge-yellow' : 'badge-green'}`}>
+                        {ws.is_paused ? 'Paused' : 'Active'}
+                      </span>
                     </td>
                     <td className="table-cell">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -140,15 +207,19 @@ export default function Workspaces() {
                       {new Date(ws.created_at).toLocaleDateString()}
                     </td>
                     <td className="table-cell" style={{ textAlign: 'right' }}>
-                      <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                      <button
+                        onClick={() => setSelectedWorkspace(ws)}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        title="Open workspace details"
+                      >
                         <ArrowRight size={16} />
                       </button>
                     </td>
                   </tr>
                 ))}
-                {workspaces.length === 0 && !loading && (
+                {filteredWorkspaces.length === 0 && !loading && (
                   <tr>
-                    <td colSpan="6" className="table-cell" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <td colSpan="7" className="table-cell" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       No workspaces found.
                     </td>
                   </tr>
@@ -174,9 +245,9 @@ export default function Workspaces() {
             </div>
             
             <form onSubmit={handleCreate} style={{ padding: '24px' }}>
-              {error && (
+              {modalError && (
                 <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '8px', fontSize: '13px', marginBottom: '20px' }}>
-                  {error}
+                  {modalError}
                 </div>
               )}
 
@@ -254,6 +325,100 @@ export default function Workspaces() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedWorkspace && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(5, 5, 10, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'grid',
+            placeItems: 'center',
+            zIndex: 1100,
+            padding: 20,
+          }}
+          onClick={() => setSelectedWorkspace(null)}
+        >
+          <div
+            className="card micro-pop"
+            style={{ width: 'min(560px, 100%)', padding: 24 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ margin: 0, fontSize: 18, color: 'var(--text-primary)' }}>{selectedWorkspace.name}</h3>
+              <span className="badge badge-orange">{selectedWorkspace.slug}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="card" style={{ padding: 14 }}>
+                <div className="section-label">Owner</div>
+                <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{selectedWorkspace.owner_name}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{selectedWorkspace.owner_email}</div>
+              </div>
+              <div className="card" style={{ padding: 14 }}>
+                <div className="section-label">Users</div>
+                <div style={{ marginTop: 6, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>{selectedWorkspace.users_count}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Active members</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface-high)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className={`badge ${selectedWorkspace.is_paused ? 'badge-yellow' : 'badge-green'}`}>
+                  {selectedWorkspace.is_paused ? 'Paused' : 'Active'}
+                </span>
+                {selectedWorkspace.paused_at && (
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    Since {new Date(selectedWorkspace.paused_at).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              {selectedWorkspace.can_manage ? (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn-outline"
+                    disabled={actionWorkspaceId === selectedWorkspace.id}
+                    onClick={() => handlePauseToggle(selectedWorkspace)}
+                  >
+                    {selectedWorkspace.is_paused ? <PlayCircle size={14} /> : <PauseCircle size={14} />}
+                    {selectedWorkspace.is_paused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    disabled={actionWorkspaceId === selectedWorkspace.id}
+                    onClick={() => handleDeleteWorkspace(selectedWorkspace)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '9px 14px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(239,68,68,0.35)',
+                      background: 'rgba(239,68,68,0.12)',
+                      color: '#f87171',
+                      cursor: actionWorkspaceId === selectedWorkspace.id ? 'not-allowed' : 'pointer',
+                      opacity: actionWorkspaceId === selectedWorkspace.id ? 0.6 : 1,
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                </div>
+              ) : (
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  Only the first-created superadmin can pause/delete workspaces.
+                </span>
+              )}
+            </div>
+            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                Created {new Date(selectedWorkspace.created_at).toLocaleString()}
+              </div>
+              <button className="btn-outline" onClick={() => setSelectedWorkspace(null)}>Close</button>
+            </div>
           </div>
         </div>
       )}
