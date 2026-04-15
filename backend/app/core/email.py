@@ -2,11 +2,13 @@
 Async email sender using aiosmtplib.
 Dark-themed, on-brand HTML email matching the Rookies HQ app design system.
 """
+import logging
 import aiosmtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 
 def _otp_email_html(otp: str, full_name: str, org_name: str) -> str:
     digits = list(otp)
@@ -242,4 +244,110 @@ async def send_project_assigned_email(to_email: str, project_name: str, full_nam
             start_tls=True,
         )
     except Exception as e:
-        print(f"Failed to send email to {to_email}: {e}")
+        logger.exception("Failed to send project assigned email to %s: %s", to_email, e)
+
+
+async def send_workspace_provision_otp_email(
+    to_email: str,
+    otp: str,
+    full_name: str,
+    org_name: str,
+) -> None:
+    """Send OTP for superadmin workspace provisioning flow."""
+    await send_otp_email(to_email, otp, full_name, org_name)
+
+
+def _workspace_credentials_email_html(
+    full_name: str,
+    org_name: str,
+    workspace_id: str,
+    temporary_password: str,
+) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Your Rookies HQ Workspace Credentials</title>
+</head>
+<body style="margin:0;padding:0;background-color:#08080d;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#08080d;min-width:100%;">
+  <tr>
+    <td align="center" style="padding:50px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+        <tr>
+          <td style="background:#0d0d14;border:1px solid #1a1a28;border-radius:16px;padding:28px;">
+            <p style="margin:0 0 14px;font-size:14px;color:#a0a0b0;font-family:Arial,sans-serif;">
+              Hi <strong style="color:#e0e0ec;">{full_name}</strong>,
+            </p>
+            <p style="margin:0 0 18px;font-size:14px;color:#a0a0b0;line-height:1.5;font-family:Arial,sans-serif;">
+              Your new workspace has been created successfully. Use the credentials below to log in.
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#131320;border:1px solid #23233a;border-radius:10px;">
+              <tr>
+                <td style="padding:16px;font-family:Arial,sans-serif;color:#e0e0ec;">
+                  <div style="font-size:12px;color:#7f86a8;margin-bottom:4px;">Workspace Name</div>
+                  <div style="font-size:15px;font-weight:700;margin-bottom:12px;">{org_name}</div>
+                  <div style="font-size:12px;color:#7f86a8;margin-bottom:4px;">Workspace ID</div>
+                  <div style="font-size:15px;font-weight:700;margin-bottom:12px;">{workspace_id}</div>
+                  <div style="font-size:12px;color:#7f86a8;margin-bottom:4px;">Temporary Password</div>
+                  <div style="font-size:15px;font-weight:700;">{temporary_password}</div>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:18px 0 0;font-size:12px;color:#8c8ca6;font-family:Arial,sans-serif;">
+              Please sign in and change this password immediately.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>"""
+
+
+async def send_workspace_credentials_email(
+    to_email: str,
+    full_name: str,
+    org_name: str,
+    workspace_id: str,
+    temporary_password: str,
+) -> None:
+    """Send workspace identifier and temporary password after OTP verification."""
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        raise RuntimeError("SMTP credentials are missing. Please configure SMTP_USER and SMTP_PASSWORD.")
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"Your {org_name} workspace credentials"
+    msg["From"] = f"Rookies HQ <{settings.SMTP_USER}>"
+    msg["To"] = to_email
+
+    plain_body = (
+        f"Hi {full_name},\n\n"
+        f"Your workspace is ready.\n"
+        f"Workspace Name: {org_name}\n"
+        f"Workspace ID: {workspace_id}\n"
+        f"Temporary Password: {temporary_password}\n\n"
+        f"Please sign in and change this password immediately.\n\n"
+        f"— Rookies HQ Team"
+    )
+    html_body = _workspace_credentials_email_html(
+        full_name=full_name,
+        org_name=org_name,
+        workspace_id=workspace_id,
+        temporary_password=temporary_password,
+    )
+
+    msg.attach(MIMEText(plain_body, "plain"))
+    msg.attach(MIMEText(html_body, "html"))
+
+    await aiosmtplib.send(
+        msg,
+        hostname=settings.SMTP_HOST,
+        port=settings.SMTP_PORT,
+        username=settings.SMTP_USER,
+        password=settings.SMTP_PASSWORD,
+        start_tls=True,
+    )

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import api from '../api/client';
@@ -61,7 +61,7 @@ export default function Login() {
   const { login, fetchMe } = useAuthStore();
 
   const [step, setStep] = useState('loading');
-  const [signupMode, setSignupMode] = useState('join'); // will be set by setup-status
+  const [signupMode, setSignupMode] = useState('create'); // safe default for fresh setups
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -77,15 +77,32 @@ export default function Login() {
   const otpRefs = useRef([]);
   const cooldownRef = useRef(null);
 
+  const resolveSignupMode = useCallback(async (maxAttempts = 4) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const res = await api.get('/auth/setup-status');
+        const mode = res.data?.needs_setup ? 'create' : 'join';
+        setSignupMode(mode);
+        return mode;
+      } catch {
+        if (attempt < maxAttempts - 1) {
+          // Handles backend boot/migration race after docker restart.
+          await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+        }
+      }
+    }
+
+    // If setup check is unavailable, prefer create to avoid blocking first-time signup.
+    setSignupMode('create');
+    return 'create';
+  }, []);
+
   // ── Check setup status on mount ────────────────────────────────
   useEffect(() => {
-    api.get('/auth/setup-status').then((res) => {
-      setSignupMode(res.data.needs_setup ? 'create' : 'join');
+    resolveSignupMode().then(() => {
       setStep('login');
-    }).catch(() => {
-      setStep('login'); // default to login if check fails
     });
-  }, []);
+  }, [resolveSignupMode]);
 
   const startCooldown = () => {
     setResendCooldown(30);
@@ -127,8 +144,19 @@ export default function Login() {
       await login(form.email, form.password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid email or password');
+      setError(err.response?.data?.detail || err.message || 'Invalid email or password');
     } finally { setLoading(false); }
+  };
+
+  const openSignupStep = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await resolveSignupMode(2);
+      setStep('signup');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Submit: Signup (create OR join) — sends OTP ──────────────────
@@ -315,7 +343,7 @@ export default function Login() {
                     <div style={{ flex: 1, height: '1px', background: 'rgba(88,66,55,0.2)' }} />
                   </div>
 
-                  <button onClick={() => { setStep('signup'); setError(''); }}
+                  <button onClick={openSignupStep}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '13px', borderRadius: '10px', background: 'rgba(249,115,22,0.08)', outline: '1px solid rgba(249,115,22,0.2)', fontSize: '14px', fontWeight: 600, color: 'rgba(255,182,144,0.8)', cursor: 'pointer', transition: 'all 150ms', border: 'none' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(249,115,22,0.15)'; e.currentTarget.style.outlineColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.color = '#ffb690'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(249,115,22,0.08)'; e.currentTarget.style.outlineColor = 'rgba(249,115,22,0.2)'; e.currentTarget.style.color = 'rgba(255,182,144,0.8)'; }}>

@@ -11,8 +11,12 @@ from typing import Optional
 
 OTP_TTL_MINUTES = 10
 
-# Structure: { email_lower: { "otp": str, "expires_at": datetime, "data": dict } }
+# Structure: { "purpose:email_lower": { "otp": str, "expires_at": datetime, "data": dict } }
 _store: dict[str, dict] = {}
+
+
+def _store_key(email: str, purpose: str) -> str:
+    return f"{purpose}:{email.lower()}"
 
 
 def generate_otp() -> str:
@@ -20,10 +24,10 @@ def generate_otp() -> str:
     return "".join(random.choices(string.digits, k=6))
 
 
-def create_otp(email: str, registration_data: dict) -> str:
+def create_otp(email: str, registration_data: dict, purpose: str = "default") -> str:
     """Store a new OTP for the given email, overwriting any previous one."""
     otp = generate_otp()
-    _store[email.lower()] = {
+    _store[_store_key(email, purpose)] = {
         "otp": otp,
         "expires_at": datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES),
         "data": registration_data,
@@ -31,27 +35,28 @@ def create_otp(email: str, registration_data: dict) -> str:
     return otp
 
 
-def verify_otp(email: str, otp: str) -> Optional[dict]:
+def verify_otp(email: str, otp: str, purpose: str = "default") -> Optional[dict]:
     """
     Verify OTP. Returns registration_data on success and removes the entry.
     Returns None if OTP is invalid or expired.
     """
-    entry = _store.get(email.lower())
+    key = _store_key(email, purpose)
+    entry = _store.get(key)
     if not entry:
         return None
     if datetime.now(timezone.utc) > entry["expires_at"]:
-        _store.pop(email.lower(), None)
+        _store.pop(key, None)
         return None
     if entry["otp"] != otp:
         return None
     # Consume it
-    _store.pop(email.lower(), None)
+    _store.pop(key, None)
     return entry["data"]
 
 
-def has_pending(email: str) -> bool:
+def has_pending(email: str, purpose: str = "default") -> bool:
     """Check if there's a still-valid pending OTP for this email."""
-    entry = _store.get(email.lower())
+    entry = _store.get(_store_key(email, purpose))
     if not entry:
         return False
     return datetime.now(timezone.utc) <= entry["expires_at"]

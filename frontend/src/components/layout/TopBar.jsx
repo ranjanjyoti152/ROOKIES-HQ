@@ -17,6 +17,7 @@ const ROUTE_SEARCH_INDEX = [
   { label: 'My Work', path: '/my-work', keywords: 'my tasks assigned' },
   { label: 'Time Report', path: '/time-report', keywords: 'time hours report' },
   { label: 'Work Dashboard', path: '/work-dashboard', keywords: 'client delivery overview' },
+  { label: 'Client Portal', path: '/client-portal', keywords: 'client review videos feedback comments' },
   { label: 'Canvas', path: '/canvas', keywords: 'whiteboard canvas brainstorming' },
   { label: 'Notes', path: '/notes', keywords: 'markdown notes docs' },
   { label: 'AI Assistant', path: '/ai-assistant', keywords: 'assistant ai chat memory sse tools graphs' },
@@ -186,16 +187,11 @@ export default function TopBar() {
         </form>
 
         {searchFocused && (
-          <div style={{
+          <div className="ui-menu" style={{
             position: 'absolute',
             top: 'calc(100% + 8px)',
             left: 0,
             right: 0,
-            borderRadius: 12,
-            border: '1px solid rgba(88,66,55,0.3)',
-            background: 'rgba(24,18,16,0.97)',
-            boxShadow: '0 24px 44px rgba(0,0,0,0.46)',
-            overflow: 'hidden',
             animation: 'scaleIn 140ms ease-out',
             maxHeight: 300,
             overflowY: 'auto',
@@ -208,20 +204,9 @@ export default function TopBar() {
               <button
                 key={item.path}
                 onClick={() => onSelectSearchResult(item.path)}
+                className="ui-menu-item"
                 style={{
-                  width: '100%',
                   textAlign: 'left',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(88,66,55,0.14)',
-                  background: 'transparent',
-                  color: '#eadbd4',
-                  padding: '10px 12px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
                 }}
               >
                 <span>{item.label}</span>
@@ -311,28 +296,25 @@ export default function TopBar() {
           </button>
 
           {showProfile && (
-            <div style={{
+            <div className="ui-menu" style={{
               position: 'absolute', right: 0, top: '45px',
               width: '236px',
-              background: '#241e1c',
-              border: '1px solid rgba(88,66,55,0.3)',
-              borderRadius: '12px',
-              overflow: 'hidden', zIndex: 100,
-              boxShadow: '0 22px 44px rgba(15,10,8,0.7)',
+              zIndex: 100,
               animation: 'fadeIn 0.16s ease-out',
             }}>
               <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(88,66,55,0.2)' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#ece0dc' }}>{user?.full_name}</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#ece0dc' }}>{user?.nickname ? `${user.nickname} (${user.full_name})` : user?.full_name}</div>
                 <div style={{ fontSize: '11px', color: 'rgba(167,139,125,0.6)', marginTop: '2px' }}>{user?.email}</div>
               </div>
 
               <button
+                className="ui-menu-item"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  width: '100%', padding: '10px 16px',
-                  background: 'none', border: 'none',
-                  fontSize: '13px', color: '#e0c0b1',
-                  cursor: 'pointer', textAlign: 'left',
+                  padding: '10px 16px',
+                  fontSize: '13px',
+                  color: '#e0c0b1',
+                  textAlign: 'left',
                 }}
                 onClick={() => {
                   setShowProfile(false);
@@ -352,12 +334,13 @@ export default function TopBar() {
                   logout();
                   navigate('/login');
                 }}
+                className="ui-menu-item"
                 style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  width: '100%', padding: '10px 16px',
-                  background: 'none', border: 'none',
-                  fontSize: '13px', color: 'rgba(248,113,113,0.8)',
-                  cursor: 'pointer', textAlign: 'left',
+                  padding: '10px 16px',
+                  fontSize: '13px',
+                  color: 'rgba(248,113,113,0.8)',
+                  textAlign: 'left',
                 }}
               >
                 <LogOut size={14} /> Logout

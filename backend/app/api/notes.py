@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.note import Note
 from app.models.user import User
 from app.dependencies import get_current_user
+from app.core.tag_acl import get_user_assigned_tag_ids, accessible_project_ids_subquery
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -45,12 +46,20 @@ async def list_notes(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all notes for the current user in this org."""
-    result = await db.execute(
-        select(Note)
-        .where(Note.org_id == current_user.org_id, Note.user_id == current_user.id)
-        .order_by(Note.updated_at.desc())
-    )
+    """List notes in org scope filtered by tag-based project visibility."""
+    query = select(Note).where(Note.org_id == current_user.org_id)
+
+    if current_user.role != "admin":
+        assigned_tag_ids = await get_user_assigned_tag_ids(db, current_user)
+        query = query.where(
+            (Note.user_id == current_user.id)
+            | (
+                Note.project_id.in_(accessible_project_ids_subquery(assigned_tag_ids))
+            )
+        )
+
+    query = query.order_by(Note.updated_at.desc())
+    result = await db.execute(query)
     return result.scalars().all()
 
 
@@ -61,6 +70,12 @@ async def create_note(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new note."""
+    if data.project_id and current_user.role != "admin":
+        assigned_tag_ids = await get_user_assigned_tag_ids(db, current_user)
+        allowed_project_ids = set((await db.execute(accessible_project_ids_subquery(assigned_tag_ids))).scalars().all())
+        if data.project_id not in allowed_project_ids:
+            raise HTTPException(status_code=403, detail="Not authorized for this project")
+
     note = Note(
         org_id=current_user.org_id,
         user_id=current_user.id,
@@ -83,11 +98,17 @@ async def update_note(
 ):
     """Update a note."""
     result = await db.execute(
-        select(Note).where(Note.id == note_id, Note.user_id == current_user.id)
+        select(Note).where(Note.id == note_id, Note.org_id == current_user.org_id)
     )
     note = result.scalar_one_or_none()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
+
+    if current_user.role != "admin" and note.user_id != current_user.id:
+        assigned_tag_ids = await get_user_assigned_tag_ids(db, current_user)
+        allowed_project_ids = set((await db.execute(accessible_project_ids_subquery(assigned_tag_ids))).scalars().all())
+        if not note.project_id or note.project_id not in allowed_project_ids:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     if data.title is not None:
         note.title = data.title
@@ -110,10 +131,16 @@ async def delete_note(
 ):
     """Delete a note."""
     result = await db.execute(
-        select(Note).where(Note.id == note_id, Note.user_id == current_user.id)
+        select(Note).where(Note.id == note_id, Note.org_id == current_user.org_id)
     )
     note = result.scalar_one_or_none()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
+
+    if current_user.role != "admin" and note.user_id != current_user.id:
+        assigned_tag_ids = await get_user_assigned_tag_ids(db, current_user)
+        allowed_project_ids = set((await db.execute(accessible_project_ids_subquery(assigned_tag_ids))).scalars().all())
+        if not note.project_id or note.project_id not in allowed_project_ids:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.delete(note)

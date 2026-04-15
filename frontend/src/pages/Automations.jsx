@@ -140,9 +140,9 @@ export default function Automations() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.65)' }}
+        <div className="ui-overlay" style={{ zIndex: 100 }}
           onClick={() => setShowCreate(false)}>
-          <div style={{ ...card, padding: '32px', width: '100%', maxWidth: '420px', animation: 'scaleIn 0.15s ease-out' }}
+          <div className="ui-subwindow" style={{ ...card, padding: '32px', width: '100%', maxWidth: '420px', animation: 'scaleIn 0.15s ease-out' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ece0dc' }}>New Automation Rule</h2>
@@ -157,7 +157,7 @@ export default function Automations() {
               <div style={{ marginBottom: '20px' }}>
                 <label style={label}>Trigger</label>
                 <select value={form.trigger_type} onChange={e => setForm({...form, trigger_type: e.target.value})}
-                  style={{ ...inputStyle, cursor: 'pointer' }}>
+                  className="ui-select">
                   <option value="task_status_change">Task Status Change</option>
                   <option value="lead_conversion">Lead Conversion</option>
                   <option value="comment_added">Comment Added</option>
@@ -166,7 +166,7 @@ export default function Automations() {
               <div style={{ marginBottom: '24px' }}>
                 <label style={label}>Action</label>
                 <select value={form.action_type} onChange={e => setForm({...form, action_type: e.target.value})}
-                  style={{ ...inputStyle, cursor: 'pointer' }}>
+                  className="ui-select">
                   <option value="send_notification">Send Notification</option>
                   <option value="move_task">Move Task</option>
                   <option value="assign_user">Assign User</option>

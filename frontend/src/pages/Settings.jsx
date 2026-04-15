@@ -462,7 +462,7 @@ export default function Settings() {
 
                   {(modelOptionsByProvider[provider] || []).length > 0 ? (
                     <select
-                      className="input"
+                      className="ui-select"
                       value={form.model || ''}
                       onChange={(e) => updateForm(provider, 'model', e.target.value)}
                     >

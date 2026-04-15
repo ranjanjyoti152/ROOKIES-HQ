@@ -16,6 +16,7 @@ import MyWork from './pages/MyWork';
 import TimeReport from './pages/TimeReport';
 import Automations from './pages/Automations';
 import WorkDashboard from './pages/WorkDashboard';
+import ClientPortal from './pages/ClientPortal';
 import Canvas from './pages/Canvas';
 import Notes from './pages/Notes';
 import Workspaces from './pages/Workspaces';
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/my-work" element={<MyWork />} />
             <Route path="/time-report" element={<TimeReport />} />
             <Route path="/work-dashboard" element={<WorkDashboard />} />
+            <Route path="/client-portal" element={<ClientPortal />} />
             <Route path="/canvas" element={<Canvas />} />
             <Route path="/notes" element={<Notes />} />
             <Route path="/notifications" element={<Notifications />} />

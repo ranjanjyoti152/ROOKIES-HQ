@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.workspaces import require_superadmin
 from app.core.crypto import decrypt_secret, encrypt_secret
 from app.database import async_session, get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_workspace_service
 from app.models.ai_chat import AIChat
 from app.models.ai_memory import AIMemory
 from app.models.ai_message import AIMessage
@@ -37,7 +37,11 @@ from app.schemas.ai import (
     AIStreamRequest,
 )
 
-router = APIRouter(prefix="/ai", tags=["ai"])
+router = APIRouter(
+    prefix="/ai",
+    tags=["ai"],
+    dependencies=[Depends(require_workspace_service("ai_assistant", "AI Assistant"))],
+)
 
 SUPPORTED_PROVIDERS = ("openai", "openrouter", "gemini", "ollama")
 

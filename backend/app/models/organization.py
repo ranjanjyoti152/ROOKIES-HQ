@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.database import Base
 
 
@@ -15,6 +15,9 @@ class Organization(Base):
     logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_paused: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     paused_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    service_flags: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -24,3 +27,5 @@ class Organization(Base):
     leads = relationship("Lead", back_populates="organization", cascade="all, delete-orphan")
     tags = relationship("Tag", back_populates="organization", cascade="all, delete-orphan")
     automation_rules = relationship("AutomationRule", back_populates="organization", cascade="all, delete-orphan")
+    video_assets = relationship("VideoAsset", cascade="all, delete-orphan")
+    productivity_logbook_entries = relationship("ProductivityLogbookEntry", cascade="all, delete-orphan")

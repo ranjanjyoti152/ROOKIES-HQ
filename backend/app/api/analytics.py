@@ -111,7 +111,7 @@ async def get_charts(
     today = datetime.now(timezone.utc)
 
     # ─── A: Tasks by Stage ───
-    stage_order = ["unassigned", "claimed", "editing", "revision", "delivered"]
+    stage_order = ["unassigned", "claimed", "editing", "internal_review", "revision", "delivered", "closed"]
     task_rows = await db.execute(
         select(Task.status, func.count().label("n"))
         .where(Task.org_id == org, Task.status.in_(stage_order))
@@ -121,7 +121,16 @@ async def get_charts(
     tasks_by_stage = {s: raw_stages.get(s, 0) for s in stage_order}
 
     # ─── B: Lead Pipeline ───
-    lead_stages = ["new_lead", "follow_ups", "vfa", "client_won", "closed"]
+    lead_stages = [
+        "new_lead",
+        "first_follow_up",
+        "second_follow_up",
+        "go_to_reply",
+        "working_on_value_first",
+        "vfa_send",
+        "client_won",
+        "closed",
+    ]
     lead_rows = await db.execute(
         select(Lead.status, func.count().label("n"))
         .where(Lead.org_id == org)

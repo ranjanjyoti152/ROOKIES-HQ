@@ -8,6 +8,9 @@ from app.models.user import User
 from app.models.organization import Organization
 
 security_scheme = HTTPBearer()
+DEFAULT_ORG_SERVICE_FLAGS = {
+    "ai_assistant": True,
+}
 
 
 async def get_current_user(
@@ -72,3 +75,32 @@ def require_roles(*roles: str):
             )
         return current_user
     return role_checker
+
+
+def is_workspace_service_enabled(service_flags: dict | None, service_key: str) -> bool:
+    defaults = DEFAULT_ORG_SERVICE_FLAGS.get(service_key, True)
+    if not isinstance(service_flags, dict):
+        return defaults
+    if service_key not in service_flags:
+        return defaults
+    return bool(service_flags.get(service_key))
+
+
+def require_workspace_service(service_key: str, service_label: str | None = None):
+    async def checker(
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        org_result = await db.execute(
+            select(Organization.service_flags).where(Organization.id == current_user.org_id)
+        )
+        service_flags = org_result.scalar_one_or_none()
+        if not is_workspace_service_enabled(service_flags, service_key):
+            label = service_label or service_key.replace("_", " ").title()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"{label} is disabled for this workspace. Contact your superadmin.",
+            )
+        return current_user
+
+    return checker

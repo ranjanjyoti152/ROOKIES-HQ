@@ -17,9 +17,33 @@ class WorkspaceResponse(BaseModel):
     users_count: int
     created_at: str
     can_manage: bool = False
+    services: dict[str, bool] = Field(default_factory=dict)
 
     model_config = {"from_attributes": True}
 
 
 class WorkspacePauseRequest(BaseModel):
     is_paused: bool
+
+
+class WorkspaceProvisionInitiateResponse(BaseModel):
+    message: str
+    owner_email: EmailStr
+
+
+class WorkspaceProvisionVerifyRequest(BaseModel):
+    owner_email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+
+
+class ResetWorkspaceOwnerPasswordRequest(BaseModel):
+    new_password: str = Field(..., min_length=8)
+
+
+class WorkspaceServiceUpdateRequest(BaseModel):
+    services: dict[str, bool] = Field(default_factory=dict)
+
+
+class WorkspaceServiceCatalogItem(BaseModel):
+    key: str
+    label: str

@@ -20,18 +20,24 @@ const STAGE_COLORS = {
 
 const LEAD_COLORS = {
   new_lead:   '#93ccff',
-  follow_ups: '#f97316',
-  vfa:        '#a855f7',
+  first_follow_up: '#f97316',
+  second_follow_up: '#fb923c',
+  go_to_reply: '#eab308',
+  working_on_value_first: '#a855f7',
+  vfa_send: '#8b5cf6',
   client_won: '#22c55e',
   closed:     '#f87171',
 };
 
 const LEAD_LABELS = {
   new_lead:   'New',
-  follow_ups: 'Contacted',
-  vfa:        'VFA',
-  client_won: 'Won',
-  closed:     'Lost',
+  first_follow_up: '1st Follow-Up',
+  second_follow_up: '2nd Follow-Up',
+  go_to_reply: 'Go To Reply',
+  working_on_value_first: 'Value First',
+  vfa_send: 'VFA Send',
+  client_won: 'Client Won',
+  closed:     'Closed',
 };
 
 // ─── Stat Card ───────────────────────────────────────────
@@ -114,7 +120,7 @@ function TasksByStage({ data }) {
 function LeadDonut({ data }) {
   const total = Object.values(data).reduce((a, b) => a + b, 0);
   const won  = data.client_won || 0;
-  const lost = data.closed || 0;
+  const closed = data.closed || 0;
 
   const R = 52, cx = 70, cy = 70, stroke = 14;
   const circumference = 2 * Math.PI * R;
@@ -124,7 +130,7 @@ function LeadDonut({ data }) {
     const pct = total > 0 ? val / total : 0;
     const dash = pct * circumference;
     const gap  = circumference - dash;
-    const slice = { key, val, offset, dash, gap, color: LEAD_COLORS[key] };
+    const slice = { key, val, offset, dash, gap, color: LEAD_COLORS[key] || '#64748b' };
     offset += dash;
     return slice;
   });
@@ -157,17 +163,17 @@ function LeadDonut({ data }) {
         {slices.map(s => (
           <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 9, height: 9, borderRadius: 2, background: s.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 11, color: 'rgba(167,139,125,0.7)', minWidth: 70 }}>{LEAD_LABELS[s.key]}</span>
+            <span style={{ fontSize: 11, color: 'rgba(167,139,125,0.7)', minWidth: 70 }}>{LEAD_LABELS[s.key] || s.key.replaceAll('_', ' ')}</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: s.color }}>{s.val}</span>
           </div>
         ))}
         {/* Won vs Lost highlight */}
         <div style={{ marginTop: 4, padding: '6px 10px', background: 'rgba(34,197,94,0.08)', borderRadius: 8, border: '1px solid rgba(34,197,94,0.15)' }}>
           <span style={{ fontSize: 10, color: '#22c55e', fontWeight: 700 }}>
-            Won {won} &nbsp;·&nbsp;
+            Client Won {won} &nbsp;·&nbsp;
           </span>
           <span style={{ fontSize: 10, color: '#f87171', fontWeight: 700 }}>
-            Lost {lost}
+            Closed {closed}
           </span>
         </div>
       </div>

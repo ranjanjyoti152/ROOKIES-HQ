@@ -1,12 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, case
 from typing import List
 from app.database import get_db
 from app.models.user import User
+from app.models.leaderboard import LeaderboardEntry
+from app.models.task import Task
 from app.core.security import hash_password
 from app.dependencies import get_current_user, require_roles
-from app.schemas.user import InviteUserRequest, UpdateUserRoleRequest, UpdateUserRequest, UserListResponse
+from app.schemas.user import (
+    InviteUserRequest,
+    UpdateUserRoleRequest,
+    UpdateUserRequest,
+    UserListResponse,
+    ResetUserPasswordRequest,
+)
+from app.core.tag_acl import get_user_assigned_tag_ids, accessible_project_ids_subquery
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -63,7 +72,84 @@ async def list_users(
         select(User).where(User.org_id == current_user.org_id).order_by(User.created_at)
     )
     users = result.scalars().all()
-    return users
+
+    points_result = await db.execute(
+        select(
+            LeaderboardEntry.user_id,
+            func.coalesce(func.sum(LeaderboardEntry.points), 0).label("total"),
+            func.coalesce(
+                func.sum(case((LeaderboardEntry.points < 0, LeaderboardEntry.points), else_=0)),
+                0,
+            ).label("penalty"),
+        )
+        .where(LeaderboardEntry.org_id == current_user.org_id)
+        .group_by(LeaderboardEntry.user_id)
+    )
+    points_map = {row.user_id: (float(row.total or 0), float(abs(row.penalty or 0))) for row in points_result}
+
+    responses: List[UserListResponse] = []
+    for user in users:
+        total, penalty = points_map.get(user.id, (0.0, 0.0))
+        responses.append(
+            UserListResponse(
+                id=user.id,
+                email=user.email,
+                full_name=user.full_name,
+                nickname=user.nickname,
+                avatar_url=user.avatar_url,
+                role=user.role,
+                role_tags=user.role_tags or [],
+                active_points=max(0.0, total),
+                penalty_points=penalty,
+                is_owner=user.is_owner,
+                is_active=user.is_active,
+                is_checked_in=user.is_checked_in,
+                must_change_password=user.must_change_password,
+            )
+        )
+    return responses
+
+
+@router.get("/mentions")
+async def list_mentionable_users(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return users suitable for @mention dropdown (nickname-first labels)."""
+    query = select(User).where(User.org_id == current_user.org_id, User.is_active == True).order_by(User.full_name)
+
+    if current_user.role != "admin":
+        assigned_tag_ids = await get_user_assigned_tag_ids(db, current_user)
+        if assigned_tag_ids:
+            visible_task_users = await db.execute(
+                select(Task.assigned_user_id)
+                .where(
+                    Task.org_id == current_user.org_id,
+                    Task.project_id.in_(accessible_project_ids_subquery(assigned_tag_ids)),
+                    Task.assigned_user_id.isnot(None),
+                )
+                .distinct()
+            )
+            visible_ids = {uid for uid in visible_task_users.scalars().all() if uid}
+            visible_ids.add(current_user.id)
+            query = query.where(User.id.in_(visible_ids))
+        else:
+            query = query.where(User.id == current_user.id)
+
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    return [
+        {
+            "id": str(u.id),
+            "nickname": u.nickname,
+            "full_name": u.full_name,
+            "display_name": u.nickname or u.full_name,
+            "role": u.role,
+            "avatar_url": u.avatar_url,
+        }
+        for u in users
+    ]
 
 
 @router.post("/invite", response_model=UserListResponse, status_code=status.HTTP_201_CREATED)
@@ -90,10 +176,49 @@ async def invite_user(
         full_name=data.full_name,
         role=data.role,
         is_owner=False,
+        must_change_password=True,
     )
     db.add(user)
     await db.flush()
     return user
+
+
+@router.post("/{user_id}/password/reset")
+async def reset_user_password(
+    user_id: str,
+    data: ResetUserPasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Reset a user's password.
+    - Superadmin: can reset any user across workspaces.
+    - Admin: can reset users only inside their workspace.
+    """
+    if not (current_user.is_superadmin or current_user.role == "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin or superadmin can reset passwords")
+
+    stmt = select(User).where(User.id == user_id)
+    if not current_user.is_superadmin:
+        stmt = stmt.where(User.org_id == current_user.org_id)
+
+    result = await db.execute(stmt)
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if target_user.is_superadmin and not current_user.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only superadmin can reset a superadmin password")
+
+    target_user.password_hash = hash_password(data.new_password)
+    target_user.must_change_password = data.require_change
+    await db.flush()
+
+    return {
+        "message": "Password reset successfully",
+        "user_id": str(target_user.id),
+        "must_change_password": target_user.must_change_password,
+    }
 
 
 @router.put("/{user_id}/role")
@@ -141,10 +266,14 @@ async def update_user(
 
     if data.full_name is not None:
         target_user.full_name = data.full_name
+    if data.nickname is not None:
+        target_user.nickname = data.nickname.strip() or None
     if data.avatar_url is not None:
         target_user.avatar_url = data.avatar_url
     if data.email is not None:
         target_user.email = data.email
+    if data.role_tags is not None:
+        target_user.role_tags = data.role_tags
 
     await db.flush()
     return target_user

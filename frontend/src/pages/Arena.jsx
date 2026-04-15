@@ -62,6 +62,7 @@ export default function Arena() {
   });
   const [activities, setActivities] = useState([]);
   const [activeTime, setActiveTime] = useState("");
+  const [logbookEntries, setLogbookEntries] = useState([]);
 
   useEffect(() => {
     if (user?.is_checked_in && user?.last_check_in) {
@@ -81,15 +82,16 @@ export default function Arena() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [myRes, allRes, statRes, notifRes, projectRes, timeRes] = await Promise.all([
-          api.get('/tasks/my-work'),
+        const [personalRes, allRes, statRes, notifRes, projectRes, timeRes] = await Promise.all([
+          api.get('/tasks/personal'),
           api.get('/tasks', { params: { status_filter: 'unassigned' } }),
           api.get('/analytics/dashboard'),
           api.get('/notifications?limit=5'),
           api.get('/projects'),
           api.get('/time-entries/report', { params: { days: 7, user_id: user?.id } }).catch(() => null),
         ]);
-        setTasks(myRes.data);
+        setTasks(personalRes.data?.tasks || []);
+        setLogbookEntries(personalRes.data?.logbook || []);
         setUnassigned(allRes.data);
         const dashboardStats = statRes.data || {};
         const reportEntry = timeRes?.data?.entries?.find((entry) => entry.user_id === user?.id)
@@ -122,8 +124,9 @@ export default function Arena() {
     try {
       await api.post(`/tasks/${taskId}/claim`);
       setUnassigned(prev => prev.filter(t => t.id !== taskId));
-      const res = await api.get('/tasks/my-work');
-      setTasks(res.data);
+      const res = await api.get('/tasks/personal');
+      setTasks(res.data?.tasks || []);
+      setLogbookEntries(res.data?.logbook || []);
       setError('');
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to claim task.');
@@ -145,8 +148,9 @@ export default function Arena() {
       const body = { target_status: targetStatus };
       if (attachmentLink) body.attachment_link = attachmentLink;
       await api.post(`/tasks/${taskId}/transition`, body);
-      const res = await api.get('/tasks/my-work');
-      setTasks(res.data);
+      const res = await api.get('/tasks/personal');
+      setTasks(res.data?.tasks || []);
+      setLogbookEntries(res.data?.logbook || []);
       setError('');
       return true;
     } catch (err) {
@@ -202,8 +206,9 @@ export default function Arena() {
         assigned_user_id: user?.id,
         is_private: true,
       });
-      const res = await api.get('/tasks/my-work');
-      setTasks(res.data);
+      const res = await api.get('/tasks/personal');
+      setTasks(res.data?.tasks || []);
+      setLogbookEntries(res.data?.logbook || []);
       setPrivateModal({ open: false, title: '', projectId: '' });
       pushToast({ type: 'success', title: 'Private task created', message: 'Added to your focus list.' });
     } catch (err) {
@@ -215,7 +220,7 @@ export default function Arena() {
 
   const activeTasks = tasks.filter(t => !['closed'].includes(t.status) && !t.is_private);
   const privateTasks = tasks.filter(t => t.is_private);
-  const archivedTasks = tasks.filter(t => t.status === 'closed' && !t.is_private);
+  const archivedTasks = logbookEntries;
   const hoursLogged = asNumber(stats.total_time_logged) / 3600;
   const tasksDone = Math.max(0, Math.floor(asNumber(stats.completed_tasks)));
   const efficiencyScore = Math.max(
@@ -241,14 +246,14 @@ export default function Arena() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc', marginBottom: '4px' }}>The Arena</h1>
-          <p style={{ fontSize: '13px', color: 'rgba(88,66,55,0.6)' }}>Active workspace for <span style={{ color: 'rgba(167,139,125,0.7)' }}>@{user?.full_name?.toLowerCase().replace(' ', '_')}</span></p>
+          <p style={{ fontSize: '13px', color: 'rgba(88,66,55,0.6)' }}>Active workspace for <span style={{ color: 'rgba(167,139,125,0.7)' }}>@{(user?.nickname || user?.full_name || '').toLowerCase().replace(' ', '_')}</span></p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {checkedIn && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 2s infinite' }} />
               <span style={{ fontSize: '12px', fontWeight: 700, color: '#ece0dc', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Checked In</span>
-              <span style={{ fontSize: '11px', color: 'rgba(88,66,55,0.5)' }}>Session {activeTime}</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#f5ede8' }}>Session {activeTime}</span>
             </div>
           )}
           <button onClick={toggleCheckIn} style={{
@@ -390,7 +395,7 @@ export default function Arena() {
                     <div key={task.id} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(88,66,55,0.2)', background: 'rgba(24,18,16,0.5)' }}>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: '#e8dbd4' }}>{task.title}</div>
                       <div style={{ fontSize: '11px', color: 'rgba(167,139,125,0.58)', marginTop: '2px' }}>
-                        Completed {new Date(task.updated_at).toLocaleDateString()}
+                        Completed {new Date(task.completed_at).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
@@ -493,16 +498,11 @@ export default function Arena() {
       </button>
 
       {showQuickActions && (
-        <div style={{
+        <div className="ui-menu" style={{
           position: 'fixed',
           bottom: '76px',
           right: '24px',
           width: 220,
-          background: 'rgba(24,18,16,0.95)',
-          border: '1px solid rgba(88,66,55,0.3)',
-          borderRadius: 12,
-          boxShadow: '0 18px 36px rgba(0,0,0,0.45)',
-          overflow: 'hidden',
           animation: 'scaleIn 150ms ease-out',
           zIndex: 20,
         }}>
@@ -517,17 +517,8 @@ export default function Arena() {
                 setShowQuickActions(false);
                 navigate(action.path);
               }}
-              style={{
-                width: '100%',
-                border: 'none',
-                borderBottom: '1px solid rgba(88,66,55,0.16)',
-                background: 'transparent',
-                color: '#e6d8d1',
-                fontSize: 12,
-                textAlign: 'left',
-                padding: '10px 12px',
-                cursor: 'pointer',
-              }}
+              className="ui-menu-item"
+              style={{ fontSize: 12, textAlign: 'left' }}
             >
               {action.label}
             </button>
@@ -536,16 +527,8 @@ export default function Arena() {
       )}
 
       {reviewModal.open && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.65)',
-          display: 'grid',
-          placeItems: 'center',
-          zIndex: 30,
-          padding: 16,
-        }} onClick={() => setReviewModal({ open: false, taskId: null, link: '' })}>
-          <div style={{ ...card, width: 'min(520px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
+        <div className="ui-overlay" style={{ zIndex: 30, padding: 16 }} onClick={() => setReviewModal({ open: false, taskId: null, link: '' })}>
+          <div className="ui-subwindow" style={{ ...card, width: 'min(520px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#ece0dc', marginBottom: 10 }}>Submit For Internal Review</div>
             <div style={{ fontSize: 12, color: 'rgba(167,139,125,0.68)', marginBottom: 12 }}>
               Paste the delivery/review link to move this task to <strong>Internal Review</strong>.
@@ -584,16 +567,8 @@ export default function Arena() {
       )}
 
       {privateModal.open && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.65)',
-          display: 'grid',
-          placeItems: 'center',
-          zIndex: 30,
-          padding: 16,
-        }} onClick={() => setPrivateModal({ open: false, title: '', projectId: '' })}>
-          <div style={{ ...card, width: 'min(520px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
+        <div className="ui-overlay" style={{ zIndex: 30, padding: 16 }} onClick={() => setPrivateModal({ open: false, title: '', projectId: '' })}>
+          <div className="ui-subwindow" style={{ ...card, width: 'min(520px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#ece0dc', marginBottom: 12 }}>Create Private Focus Task</div>
             <div style={{ display: 'grid', gap: 10 }}>
               <input
@@ -614,16 +589,7 @@ export default function Arena() {
               <select
                 value={privateModal.projectId}
                 onChange={(e) => setPrivateModal((prev) => ({ ...prev, projectId: e.target.value }))}
-                style={{
-                  width: '100%',
-                  borderRadius: 9,
-                  border: '1px solid rgba(88,66,55,0.35)',
-                  background: '#2f2926',
-                  color: '#eee0d8',
-                  fontSize: 13,
-                  padding: '10px 12px',
-                  outline: 'none',
-                }}
+                className="ui-select"
               >
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>{project.name}</option>

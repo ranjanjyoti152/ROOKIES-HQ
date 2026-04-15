@@ -15,7 +15,7 @@ const iconMap = {
 function groupItems(items) {
   const sections = { GENERAL: [], PERFORMANCE: [], TOOLS: [] };
   const perf = ['leaderboard', 'my_work', 'time_report'];
-  const tools = ['canvas', 'notes', 'work_dashboard', 'ai_assistant', 'settings'];
+  const tools = ['canvas', 'notes', 'work_dashboard', 'client_portal', 'ai_assistant', 'settings'];
   for (const item of items) {
     if (perf.includes(item.key)) sections.PERFORMANCE.push(item);
     else if (tools.includes(item.key)) sections.TOOLS.push(item);

@@ -19,10 +19,7 @@ export default function TimeReport() {
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ece0dc' }}>Time Report</h1>
           <p style={{ fontSize: '13px', color: 'rgba(88,66,55,0.6)', marginTop: '4px' }}>Overview of team hours tracked</p>
         </div>
-        <select value={days} onChange={e => setDays(Number(e.target.value))} style={{
-          padding: '8px 12px', background: '#2f2926', border: '1px solid rgba(88,66,55,0.3)', borderRadius: '8px',
-          fontSize: '13px', fontWeight: 600, color: '#e0c0b1', outline: 'none', cursor: 'pointer'
-        }}>
+        <select value={days} onChange={e => setDays(Number(e.target.value))} className="ui-select ui-select-sm" style={{ width: '165px' }}>
           <option value={1}>Today</option>
           <option value={7}>Last 7 days</option>
           <option value={30}>Last 30 days</option>

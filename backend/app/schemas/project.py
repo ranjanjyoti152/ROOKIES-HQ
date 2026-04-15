@@ -10,8 +10,11 @@ class ProjectCreate(BaseModel):
     client_name: Optional[str] = None
     description: Optional[str] = None
     status: str = "active"
+    project_tag_id: Optional[UUID] = None
+    client_tag_ids: Optional[List[UUID]] = None
     tag_ids: Optional[List[UUID]] = None
     member_ids: Optional[List[UUID]] = []
+    lead_id: Optional[UUID] = None
 
 
 class ProjectUpdate(BaseModel):
@@ -19,6 +22,8 @@ class ProjectUpdate(BaseModel):
     client_name: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
+    project_tag_id: Optional[UUID] = None
+    client_tag_ids: Optional[List[UUID]] = None
     member_ids: Optional[List[UUID]] = None
 
 
@@ -26,6 +31,12 @@ class ProjectResponse(BaseModel):
     id: UUID
     org_id: UUID
     name: str
+    tag_key: Optional[str] = None
+    project_tag_id: Optional[UUID] = None
+    project_tag: Optional[str] = None
+    client_tags: List[str] = []
+    lead_origin: Optional[str] = None
+    task_count: int = 0
     client_name: Optional[str] = None
     description: Optional[str] = None
     status: str

@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, Text, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.database import Base
 
 
@@ -14,10 +14,13 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    nickname: Mapped[str | None] = mapped_column(String(80), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="editor")
+    role_tags: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     is_owner: Mapped[bool] = mapped_column(Boolean, default=False)
     is_superadmin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_checked_in: Mapped[bool] = mapped_column(Boolean, default=False)
     last_check_in: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -25,15 +28,24 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
+        Index(
+            "uq_users_org_nickname_not_null",
+            "org_id",
+            "nickname",
+            unique=True,
+            postgresql_where=text("nickname IS NOT NULL"),
+        ),
         {"schema": None},
     )
 
     # Relationships
     organization = relationship("Organization", back_populates="users")
     assigned_tasks = relationship("Task", back_populates="assigned_user", foreign_keys="Task.assigned_user_id")
-    comments = relationship("Comment", back_populates="user")
+    comments = relationship("Comment", back_populates="user", foreign_keys="Comment.user_id")
+    resolved_comments = relationship("Comment", back_populates="resolver", foreign_keys="Comment.resolved_by")
     time_entries = relationship("TimeEntry", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
     leaderboard_entries = relationship("LeaderboardEntry", back_populates="user")
     project_memberships = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
     assigned_projects = relationship("Project", secondary="project_members", viewonly=True, primaryjoin="User.id == ProjectMember.user_id", secondaryjoin="and_(ProjectMember.project_id == Project.id, ProjectMember.status != 'rejected')")
+    tag_assignments = relationship("UserTagAssignment", back_populates="user", cascade="all, delete-orphan")

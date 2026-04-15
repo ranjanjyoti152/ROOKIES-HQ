@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -43,10 +43,13 @@ class UserResponse(BaseModel):
     org_id: UUID
     email: str
     full_name: str
+    nickname: Optional[str] = None
     avatar_url: Optional[str] = None
     role: str
+    role_tags: Optional[List[str]] = None
     is_owner: bool
     is_superadmin: bool = False
+    must_change_password: bool = False
     is_active: bool
     is_checked_in: bool
     last_check_in: Optional[datetime] = None
@@ -58,3 +61,9 @@ class UserResponse(BaseModel):
 class MeResponse(BaseModel):
     user: UserResponse
     organization: dict
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str | None = None
+    new_password: str = Field(..., min_length=8)
+    skip_current_password_check: bool = False

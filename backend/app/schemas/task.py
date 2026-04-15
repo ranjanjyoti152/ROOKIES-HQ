@@ -9,9 +9,12 @@ class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
     assigned_user_id: Optional[UUID] = None
+    created_by_user_id: Optional[UUID] = None
     priority: str = "medium"
     task_type: str = "short_form"
     deadline: Optional[datetime] = None
+    attachment_link: Optional[str] = None
+    is_flagged: bool = False
     is_private: bool = False
     tag_ids: Optional[List[UUID]] = None
 
@@ -23,6 +26,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[str] = None
     deadline: Optional[datetime] = None
     attachment_link: Optional[str] = None
+    is_flagged: Optional[bool] = None
     sort_order: Optional[int] = None
 
 
@@ -37,6 +41,7 @@ class TaskResponse(BaseModel):
     project_id: UUID
     title: str
     description: Optional[str] = None
+    created_by_user_id: Optional[UUID] = None
     assigned_user_id: Optional[UUID] = None
     assigned_user_name: Optional[str] = None
     status: str
@@ -44,6 +49,11 @@ class TaskResponse(BaseModel):
     task_type: str
     deadline: Optional[datetime] = None
     attachment_link: Optional[str] = None
+    is_flagged: bool = False
+    revision_badge_count: int = 0
+    needs_attention: bool = False
+    last_revision_at: Optional[datetime] = None
+    project_tag: Optional[str] = None
     is_private: bool
     sort_order: int
     created_at: datetime
