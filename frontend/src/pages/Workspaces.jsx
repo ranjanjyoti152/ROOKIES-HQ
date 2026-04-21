@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Building2, Plus, Shield, Search, Loader2, ArrowRight, PauseCircle, PlayCircle, Trash2, KeyRound } from 'lucide-react';
 import api from '../api/client';
 import useAuthStore from '../store/authStore';
+import { ConfirmDialog, PromptDialog } from '../components/ui/Dialogs';
 
 function getApiErrorMessage(err, fallback) {
   const detail = err?.response?.data?.detail;
@@ -95,6 +96,8 @@ export default function Workspaces() {
   const [otpEmail, setOtpEmail] = useState('');
   const [actionWorkspaceId, setActionWorkspaceId] = useState(null);
   const [serviceSavingKey, setServiceSavingKey] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState({ workspace: null, busy: false });
+  const [ownerPasswordDialog, setOwnerPasswordDialog] = useState({ workspace: null, busy: false, error: '' });
 
   useEffect(() => {
     fetchWorkspaces();
@@ -226,42 +229,55 @@ export default function Workspaces() {
   };
 
   const handleDeleteWorkspace = async (workspace) => {
-    const confirmed = window.confirm(
-      `Delete workspace "${workspace.name}"?\n\nThis action is permanent and removes all workspace data.`
-    );
-    if (!confirmed) return;
+    setDeleteDialog({ workspace, busy: false });
+  };
 
+  const confirmDeleteWorkspace = async () => {
+    const workspace = deleteDialog.workspace;
+    if (!workspace) return;
     setError(null);
+    setDeleteDialog((prev) => ({ ...prev, busy: true }));
     setActionWorkspaceId(workspace.id);
     try {
       await api.delete(`/workspaces/${workspace.id}`);
       setWorkspaces((prev) => prev.filter((ws) => ws.id !== workspace.id));
       setSelectedWorkspace((prev) => (prev?.id === workspace.id ? null : prev));
+      setDeleteDialog({ workspace: null, busy: false });
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to delete workspace.'));
     } finally {
+      setDeleteDialog((prev) => ({ ...prev, busy: false }));
       setActionWorkspaceId(null);
     }
   };
 
   const handleResetOwnerPassword = async (workspace) => {
-    const nextPassword = window.prompt(`Set temporary owner password for "${workspace.name}" (min 8 chars)`, '');
-    if (nextPassword === null) return;
+    setOwnerPasswordDialog({ workspace, busy: false, error: '' });
+  };
+
+  const submitOwnerPasswordReset = async (nextPassword) => {
+    const workspace = ownerPasswordDialog.workspace;
+    if (!workspace) return;
     if ((nextPassword || '').length < 8) {
-      setError('Temporary owner password must be at least 8 characters.');
+      setOwnerPasswordDialog((prev) => ({ ...prev, error: 'Temporary owner password must be at least 8 characters.' }));
       return;
     }
 
+    setOwnerPasswordDialog((prev) => ({ ...prev, busy: true, error: '' }));
     setError(null);
     setActionWorkspaceId(workspace.id);
     try {
       await api.post(`/workspaces/${workspace.id}/owner-password/reset`, {
         new_password: nextPassword,
       });
+      setOwnerPasswordDialog({ workspace: null, busy: false, error: '' });
       setError(`Owner password reset for "${workspace.name}". Credentials sent to owner and superadmin email.`);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to reset workspace owner password.'));
+      const message = getApiErrorMessage(err, 'Failed to reset workspace owner password.');
+      setOwnerPasswordDialog((prev) => ({ ...prev, error: message }));
+      setError(message);
     } finally {
+      setOwnerPasswordDialog((prev) => ({ ...prev, busy: false }));
       setActionWorkspaceId(null);
     }
   };
@@ -759,6 +775,34 @@ export default function Workspaces() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteDialog.workspace}
+        title={`Delete Workspace${deleteDialog.workspace ? ` · ${deleteDialog.workspace.name}` : ''}`}
+        message="This action is permanent and removes all workspace data."
+        confirmText="Delete Workspace"
+        cancelText="Cancel"
+        danger
+        busy={deleteDialog.busy}
+        onCancel={() => setDeleteDialog({ workspace: null, busy: false })}
+        onConfirm={confirmDeleteWorkspace}
+      />
+
+      <PromptDialog
+        open={!!ownerPasswordDialog.workspace}
+        title={`Reset Owner Password${ownerPasswordDialog.workspace ? ` · ${ownerPasswordDialog.workspace.name}` : ''}`}
+        message="Set temporary owner password. Credentials will be emailed to owner and superadmin."
+        label="Temporary Owner Password"
+        type="password"
+        minLength={8}
+        defaultValue=""
+        confirmText="Reset Password"
+        error={ownerPasswordDialog.error}
+        busy={ownerPasswordDialog.busy}
+        onValueChange={() => setOwnerPasswordDialog((prev) => ({ ...prev, error: '' }))}
+        onCancel={() => setOwnerPasswordDialog({ workspace: null, busy: false, error: '' })}
+        onSubmit={submitOwnerPasswordReset}
+      />
     </div>
   );
 }

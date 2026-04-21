@@ -111,18 +111,11 @@ export default function MyWork() {
 
       {selectedTask && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.65)',
-            display: 'grid',
-            placeItems: 'center',
-            zIndex: 1200,
-            padding: 16,
-          }}
+          className="ui-overlay"
+          style={{ zIndex: 1200, padding: 16 }}
           onClick={() => setSelectedTask(null)}
         >
-          <div style={{ ...card, width: 'min(640px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
+          <div className="ui-subwindow card" style={{ ...card, width: 'min(640px, 100%)', padding: 20 }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, color: '#ece0dc' }}>{selectedTask.title}</h3>
             <div style={{ fontSize: 12, color: 'rgba(167,139,125,0.68)', marginBottom: 12 }}>
               Status: <strong style={{ color: '#f5e8e1' }}>{selectedTask.status.replace('_', ' ')}</strong> • Priority: <strong style={{ color: '#f5e8e1' }}>{selectedTask.priority}</strong>
@@ -152,7 +145,7 @@ export default function MyWork() {
             <div style={{ marginTop: 16, textAlign: 'right' }}>
               <button
                 onClick={() => setSelectedTask(null)}
-                style={{ border: 'none', borderRadius: 8, background: '#f97316', color: '#fff', padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                className="btn-primary"
               >
                 Close
               </button>

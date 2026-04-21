@@ -3,6 +3,7 @@ import api from '../api/client';
 import { Plus, Radio, UserX, UserCheck, Crown, X, Search, Star, MoreVertical, KeyRound } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import useToastStore from '../store/toastStore';
+import { PromptDialog } from '../components/ui/Dialogs';
 
 const card = {
   background: 'rgba(32, 26, 24, 0.55)',
@@ -55,6 +56,9 @@ export default function Team() {
 
   const [showInvite, setShowInvite] = useState(false);
   const [form, setForm] = useState({ email: '', full_name: '', nickname: '', password: '', role: 'editor' });
+  const [passwordResetDialog, setPasswordResetDialog] = useState({ user: null, busy: false, error: '' });
+  const [nicknameDialog, setNicknameDialog] = useState({ user: null, busy: false, error: '' });
+  const [roleTagDialog, setRoleTagDialog] = useState({ user: null, busy: false, error: '' });
 
   const fetchUsers = async () => {
     try {
@@ -144,52 +148,84 @@ export default function Team() {
 
   const resetPassword = async (u) => {
     if (!(currentUser?.role === 'admin' || currentUser?.is_superadmin)) return;
-    const nextPassword = window.prompt(`Set temporary password for ${u.full_name} (min 8 chars)`, '');
-    if (nextPassword === null) return;
+    setPasswordResetDialog({ user: u, busy: false, error: '' });
+  };
+
+  const submitResetPassword = async (nextPassword) => {
     if ((nextPassword || '').length < 8) {
-      setError('Temporary password must be at least 8 characters.');
+      setPasswordResetDialog((prev) => ({ ...prev, error: 'Temporary password must be at least 8 characters.' }));
       return;
     }
     try {
-      await api.post(`/users/${u.id}/password/reset`, {
+      setPasswordResetDialog((prev) => ({ ...prev, busy: true, error: '' }));
+      const target = passwordResetDialog.user;
+      if (!target) return;
+      await api.post(`/users/${target.id}/password/reset`, {
         new_password: nextPassword,
         require_change: true,
       });
       await fetchUsers();
+      setPasswordResetDialog({ user: null, busy: false, error: '' });
       pushToast({
         type: 'success',
         title: 'Password reset',
-        message: `${u.full_name} must change password on next login.`,
+        message: `${target.full_name} must change password on next login.`,
       });
     } catch (e) {
       const message = e.response?.data?.detail || 'Failed to reset password';
+      setPasswordResetDialog((prev) => ({ ...prev, error: message }));
       setError(message);
       pushToast({ type: 'error', title: 'Password reset failed', message });
+    } finally {
+      setPasswordResetDialog((prev) => ({ ...prev, busy: false }));
     }
   };
 
   const updateNickname = async (u) => {
-    const value = window.prompt('Set nickname', u.nickname || '');
-    if (value === null) return;
+    setNicknameDialog({ user: u, busy: false, error: '' });
+  };
+
+  const submitNickname = async (value) => {
+    const target = nicknameDialog.user;
+    if (!target) return;
     try {
-      await api.put(`/users/${u.id}`, { nickname: value.trim() || null });
+      setNicknameDialog((prev) => ({ ...prev, busy: true, error: '' }));
+      await api.put(`/users/${target.id}`, { nickname: value.trim() || null });
       await fetchUsers();
+      setNicknameDialog({ user: null, busy: false, error: '' });
     } catch (e) {
       const message = e.response?.data?.detail || 'Failed to update nickname';
+      setNicknameDialog((prev) => ({ ...prev, error: message }));
       setError(message);
       pushToast({ type: 'error', title: 'Nickname update failed', message });
+    } finally {
+      setNicknameDialog((prev) => ({ ...prev, busy: false }));
     }
   };
 
   const addRoleTag = async (u) => {
-    const value = window.prompt('Add custom role tag', 'research');
-    if (!value) return;
-    const next = Array.from(new Set([...(u.role_tags || []), value.trim().toLowerCase()]));
+    setRoleTagDialog({ user: u, busy: false, error: '' });
+  };
+
+  const submitRoleTag = async (value) => {
+    const target = roleTagDialog.user;
+    if (!target) return;
+    if (!value || !value.trim()) {
+      setRoleTagDialog((prev) => ({ ...prev, error: 'Please enter a role tag.' }));
+      return;
+    }
+    const next = Array.from(new Set([...(target.role_tags || []), value.trim().toLowerCase()]));
     try {
-      await api.put(`/users/${u.id}`, { role_tags: next });
+      setRoleTagDialog((prev) => ({ ...prev, busy: true, error: '' }));
+      await api.put(`/users/${target.id}`, { role_tags: next });
       await fetchUsers();
+      setRoleTagDialog({ user: null, busy: false, error: '' });
     } catch (e) {
-      setError(e.response?.data?.detail || 'Failed to add role tag.');
+      const message = e.response?.data?.detail || 'Failed to add role tag.';
+      setRoleTagDialog((prev) => ({ ...prev, error: message }));
+      setError(message);
+    } finally {
+      setRoleTagDialog((prev) => ({ ...prev, busy: false }));
     }
   };
 
@@ -378,6 +414,52 @@ export default function Team() {
           </div>
         </div>
       )}
+
+      <PromptDialog
+        open={!!passwordResetDialog.user}
+        title={`Reset Password${passwordResetDialog.user ? ` · ${passwordResetDialog.user.full_name}` : ''}`}
+        message="Set a temporary password. User must change it on next login."
+        label="Temporary Password"
+        type="password"
+        minLength={8}
+        confirmText="Reset Password"
+        defaultValue=""
+        error={passwordResetDialog.error}
+        busy={passwordResetDialog.busy}
+        onValueChange={() => setPasswordResetDialog((prev) => ({ ...prev, error: '' }))}
+        onCancel={() => setPasswordResetDialog({ user: null, busy: false, error: '' })}
+        onSubmit={submitResetPassword}
+      />
+
+      <PromptDialog
+        open={!!nicknameDialog.user}
+        title={`Set Nickname${nicknameDialog.user ? ` · ${nicknameDialog.user.full_name}` : ''}`}
+        message="Nickname is optional. Leave blank to remove it."
+        label="Nickname"
+        defaultValue={nicknameDialog.user?.nickname || ''}
+        placeholder="e.g. Knox"
+        confirmText="Save Nickname"
+        error={nicknameDialog.error}
+        busy={nicknameDialog.busy}
+        onValueChange={() => setNicknameDialog((prev) => ({ ...prev, error: '' }))}
+        onCancel={() => setNicknameDialog({ user: null, busy: false, error: '' })}
+        onSubmit={submitNickname}
+      />
+
+      <PromptDialog
+        open={!!roleTagDialog.user}
+        title={`Add Role Tag${roleTagDialog.user ? ` · ${roleTagDialog.user.full_name}` : ''}`}
+        message="Add a custom role tag for filtered permissions and tracking."
+        label="Role Tag"
+        defaultValue="research"
+        placeholder="e.g. research"
+        confirmText="Add Tag"
+        error={roleTagDialog.error}
+        busy={roleTagDialog.busy}
+        onValueChange={() => setRoleTagDialog((prev) => ({ ...prev, error: '' }))}
+        onCancel={() => setRoleTagDialog({ user: null, busy: false, error: '' })}
+        onSubmit={submitRoleTag}
+      />
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
